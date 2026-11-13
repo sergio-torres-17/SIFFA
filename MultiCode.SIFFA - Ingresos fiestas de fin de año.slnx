@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/Database/">
+    <Project Path="SIFFA.Database/SIFFA.Database.sqlproj" Id="0b9a385e-5ca2-420d-b951-b4f43eb9c9d8">
+      <Build />
+      <Deploy />
+    </Project>
+  </Folder>
+  <Folder Name="/Desktop/">
+    <Project Path="SIFFA.DesktopApp/SIFFA.DesktopApp.csproj" />
+  </Folder>
+  <Folder Name="/Web/">
+    <Project Path="SIFFA.WebApp/SIFFA.WebApp.csproj" />
+  </Folder>
+</Solution>

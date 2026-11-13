@@ -1,0 +1,7 @@
+﻿CREATE TABLE [Catalog].[AddType]
+(
+	[AddTypeId] INT NOT NULL PRIMARY KEY IDENTITY(1,1),
+	[AddTypeName] NVARCHAR(50) NOT NULL,
+	[AddTypeDescription] NVARCHAR(200) NULL,
+	[InsertionDate] DATETIME NOT NULL DEFAULT GETDATE(),
+)

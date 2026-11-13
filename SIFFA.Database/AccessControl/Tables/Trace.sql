@@ -1,0 +1,9 @@
+﻿CREATE TABLE [AccessControl].[Trace]
+(
+	[TraceId] INT NOT NULL PRIMARY KEY identity(1,1),
+	[AccessActionId] INT NOT NULL,
+	[EmployeeId] UNIQUEIDENTIFIER NOT NULL,
+	[TraceDate] DATETIME NOT NULL DEFAULT GETDATE(),
+	[TraceDescription] NVARCHAR(100) NOT NULL,
+	[InsertionDate] DATETIME NOT NULL DEFAULT GETDATE()
+)
