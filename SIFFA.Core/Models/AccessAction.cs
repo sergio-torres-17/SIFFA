@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace SIFFA.WebApp.Data.Models;
+namespace SIFFA.Core.Models;
 
 public partial class AccessAction
 {
-    public int AccessActionId { get; set; }
+    public Guid AccessActionId { get; set; }
 
     public string AccessActionName { get; set; } = null!;
 

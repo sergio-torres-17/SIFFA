@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace SIFFA.WebApp.Data.Models;
+namespace SIFFA.Core.Models;
 
 public partial class EmployeeType
 {
-    public int EmployeeTypeId { get; set; }
+    public Guid EmployeeTypeId { get; set; }
 
     public string EmployeeTypeName { get; set; } = null!;
 

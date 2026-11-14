@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace SIFFA.WebApp.Data.Models;
+namespace SIFFA.Core.Models;
 
 public partial class Employee
 {
@@ -9,7 +9,7 @@ public partial class Employee
 
     public string InernalIdentifier { get; set; } = null!;
 
-    public int AreaId { get; set; }
+    public Guid AreaId { get; set; }
 
     public string FirstName { get; set; } = null!;
 

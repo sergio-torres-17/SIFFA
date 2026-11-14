@@ -2,15 +2,15 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
-namespace SIFFA.WebApp.Data.Models;
+namespace SIFFA.Core.Models;
 
-public partial class SffaContext : DbContext
+public partial class SiffaContext : DbContext
 {
-    public SffaContext()
+    public SiffaContext()
     {
     }
 
-    public SffaContext(DbContextOptions<SffaContext> options)
+    public SiffaContext(DbContextOptions<SiffaContext> options)
         : base(options)
     {
     }
@@ -31,17 +31,13 @@ public partial class SffaContext : DbContext
 
     public virtual DbSet<Trace> Traces { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=.\\DEVCHECK;Database=SFFA;Trusted_Connection=False;User=sa;Password=personal;TrustServerCertificate=True;");
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.UseCollation("SQL_Latin1_General_CP1_CI_AS");
 
         modelBuilder.Entity<AccessAction>(entity =>
         {
-            entity.HasKey(e => e.AccessActionId).HasName("PK__AccessAc__10D720B61F779D95");
+            entity.HasKey(e => e.AccessActionId).HasName("PK__AccessAc__10D720B67DC1A5D2");
 
             entity.ToTable("AccessAction", "Catalog");
 
@@ -56,7 +52,7 @@ public partial class SffaContext : DbContext
 
         modelBuilder.Entity<AddEmployee>(entity =>
         {
-            entity.HasKey(e => e.AddEmployeeId).HasName("PK__AddEmplo__6D6935148C0EFEA3");
+            entity.HasKey(e => e.AddEmployeeId).HasName("PK__AddEmplo__6D69351496ECDA08");
 
             entity.ToTable("AddEmployee", "Add");
 
@@ -82,7 +78,7 @@ public partial class SffaContext : DbContext
 
         modelBuilder.Entity<AddType>(entity =>
         {
-            entity.HasKey(e => e.AddTypeId).HasName("PK__AddType__7B30BD5EF6F4E17A");
+            entity.HasKey(e => e.AddTypeId).HasName("PK__AddType__7B30BD5E1B476817");
 
             entity.ToTable("AddType", "Catalog");
 
@@ -97,7 +93,7 @@ public partial class SffaContext : DbContext
 
         modelBuilder.Entity<AddTypeEmployee>(entity =>
         {
-            entity.HasKey(e => e.AddTypeEmployeeId).HasName("PK__AddTypeE__A8AE99C74C58F595");
+            entity.HasKey(e => e.AddTypeEmployeeId).HasName("PK__AddTypeE__A8AE99C727FD3FC9");
 
             entity.ToTable("AddTypeEmployee", "Add");
 
@@ -122,7 +118,7 @@ public partial class SffaContext : DbContext
 
         modelBuilder.Entity<Area>(entity =>
         {
-            entity.HasKey(e => e.AreaId).HasName("PK__Area__70B8204885C5510E");
+            entity.HasKey(e => e.AreaId).HasName("PK__Area__70B8204836B32410");
 
             entity.ToTable("Area", "Catalog");
 
@@ -138,7 +134,7 @@ public partial class SffaContext : DbContext
 
         modelBuilder.Entity<Employee>(entity =>
         {
-            entity.HasKey(e => e.EmployeeId).HasName("PK__Employee__7AD04F1193055737");
+            entity.HasKey(e => e.EmployeeId).HasName("PK__Employee__7AD04F1143168BF2");
 
             entity.ToTable("Employee", "Catalog");
 
@@ -165,7 +161,7 @@ public partial class SffaContext : DbContext
 
         modelBuilder.Entity<EmployeeType>(entity =>
         {
-            entity.HasKey(e => e.EmployeeTypeId).HasName("PK__Employee__1F1B6A94A5B8216D");
+            entity.HasKey(e => e.EmployeeTypeId).HasName("PK__Employee__1F1B6A94D5BBD65D");
 
             entity.ToTable("EmployeeType", "Catalog");
 
@@ -180,7 +176,7 @@ public partial class SffaContext : DbContext
 
         modelBuilder.Entity<Trace>(entity =>
         {
-            entity.HasKey(e => e.TraceId).HasName("PK__Trace__70C9CE9CE1C72DF0");
+            entity.HasKey(e => e.TraceId).HasName("PK__Trace__70C9CE9C2E824BBA");
 
             entity.ToTable("Trace", "AccessControl");
 

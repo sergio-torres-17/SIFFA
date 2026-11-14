@@ -73,6 +73,12 @@
     <Folder Include="Add\Foreign Keys" />
     <Folder Include="Add\Indexes" />
     <Folder Include="Add\Tables" />
+    <Folder Include="Security" />
+    <Folder Include="Security\Foreign Keys" />
+    <Folder Include="Security\Indexes" />
+    <Folder Include="Security\Tables" />
+    <Folder Include="Security\Store Procedures" />
+    <Folder Include="Security\Scripts" />
   </ItemGroup>
   <ItemGroup>
     <Build Include="Schemas\Employee.sql" />
@@ -107,5 +113,16 @@
     <Build Include="Add\Indexes\IX_AddEmployee_EmployeeId_AddTypeId.sql" />
     <Build Include="Add\Indexes\IX_AddTypeEmployee_AddTypeId.sql" />
     <Build Include="Add\Indexes\UX_AddTypeEmployee_EmployeeId_AddTypeId.sql" />
+    <Build Include="Schemas\Security.sql" />
+    <Build Include="Security\Tables\User.sql" />
+    <Build Include="Security\Tables\Credential.sql" />
+    <Build Include="Security\Foreign Keys\Fk_Credential_UserId.sql" />
+    <Build Include="Security\Indexes\UX_User_Email.sql" />
+    <Build Include="Security\Indexes\IX_Credential_UserId.sql" />
+    <Build Include="Security\Indexes\UX_Credential_UsernameHash.sql" />
+    <Build Include="Security\Store Procedures\Usp_Insert_Basics.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <PostDeploy Include="Security\Scripts\Script.PostDeployment1.sql" />
   </ItemGroup>
 </Project>

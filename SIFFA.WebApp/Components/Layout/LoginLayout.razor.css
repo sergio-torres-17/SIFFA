@@ -1,0 +1,11 @@
+.login-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background:
+        radial-gradient(circle at 20% 15%, rgba(34, 211, 238, 0.18), transparent 45%),
+        radial-gradient(circle at 85% 90%, rgba(14, 116, 144, 0.35), transparent 50%),
+        #0A1230;
+}

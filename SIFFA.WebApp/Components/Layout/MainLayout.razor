@@ -1,23 +1,109 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager Navigation
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<MudThemeProvider Theme="_theme" @bind-IsDarkMode="_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="ToggleDrawer" />
+        <MudText Typo="Typo.h6" Class="ml-2">SIFFA</MudText>
+        <MudSpacer />
+        <MudTooltip Text="@(_isDarkMode ? "Modo claro" : "Modo oscuro")">
+            <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                           Color="Color.Inherit" OnClick="ToggleTheme" />
+        </MudTooltip>
+        <AuthorizeView>
+            <Authorized>
+                <MudText Typo="Typo.body2" Class="mr-2 d-none d-sm-flex">@context.User.Identity?.Name</MudText>
+                <MudTooltip Text="Cerrar sesión">
+                    <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" OnClick="Logout" />
+                </MudTooltip>
+            </Authorized>
+        </AuthorizeView>
+    </MudAppBar>
 
-        <article class="content px-4">
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="1" Variant="DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always">
+        <MudNavMenu>
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Inicio</MudNavLink>
+            <MudNavLink Href="/SetAccess" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Login">Control de accesos</MudNavLink>
+            <MudNavLink Href="/ViewCards" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.CardGiftcard">Ver invitaciones</MudNavLink>
+            <MudNavLink Href="/UploadEmployee" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.People">Subir empleados</MudNavLink>
+            <MudNavLink Href="/SetAdds" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.AddCard">Configurar elementos adicionales</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="my-6">
             @Body
-        </article>
-    </main>
-</div>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private bool _drawerOpen = true;
+
+    // Paleta "Insta Data Flash": modo oscuro por defecto (fondo principal Azul noche).
+    private bool _isDarkMode = true;
+
+    private readonly MudTheme _theme = new()
+    {
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#22D3EE",              // Cian rayo
+            PrimaryContrastText = "#0A1230",
+            Secondary = "#B6C0E0",            // Lavanda gris
+            SecondaryContrastText = "#0A1230",
+            Background = "#0A1230",           // Azul noche
+            Surface = "#16234F",              // Marino
+            AppbarBackground = "#16234F",
+            AppbarText = "#FFFFFF",
+            DrawerBackground = "#16234F",
+            DrawerText = "#FFFFFF",
+            DrawerIcon = "#B6C0E0",
+            TextPrimary = "#FFFFFF",
+            TextSecondary = "#B6C0E0",
+            ActionDefault = "#B6C0E0",
+            Divider = "#22305F",
+            DividerLight = "#22305F",
+            LinesDefault = "#22305F",
+            TableLines = "#22305F",
+        },
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#0E7490",              // Cian profundo
+            PrimaryContrastText = "#FFFFFF",
+            Secondary = "#16234F",            // Marino
+            SecondaryContrastText = "#FFFFFF",
+            Background = "#F4F7FC",           // Niebla
+            Surface = "#FFFFFF",              // Blanco
+            AppbarBackground = "#0A1230",
+            AppbarText = "#FFFFFF",
+            DrawerBackground = "#FFFFFF",
+            DrawerText = "#0A1230",
+            DrawerIcon = "#16234F",
+            TextPrimary = "#0A1230",
+            TextSecondary = "#16234F",
+            ActionDefault = "#16234F",
+        },
+        LayoutProperties = new LayoutProperties
+        {
+            DefaultBorderRadius = "10px",
+        },
+    };
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    private void ToggleTheme() => _isDarkMode = !_isDarkMode;
+
+    // Se usa carga completa porque /account/logout es un endpoint del servidor, no una página de Blazor.
+    private void Logout() => Navigation.NavigateTo("/account/logout", forceLoad: true);
+}

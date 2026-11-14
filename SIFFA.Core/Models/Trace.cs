@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace SIFFA.WebApp.Data.Models;
+namespace SIFFA.Core.Models;
 
 public partial class Trace
 {
-    public int TraceId { get; set; }
+    public Guid TraceId { get; set; }
 
-    public int AccessActionId { get; set; }
+    public Guid AccessActionId { get; set; }
 
     public Guid EmployeeId { get; set; }
 

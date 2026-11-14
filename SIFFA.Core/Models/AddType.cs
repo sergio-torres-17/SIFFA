@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace SIFFA.WebApp.Data.Models;
+namespace SIFFA.Core.Models;
 
 public partial class AddType
 {
-    public int AddTypeId { get; set; }
+    public Guid AddTypeId { get; set; }
 
     public string AddTypeName { get; set; } = null!;
 

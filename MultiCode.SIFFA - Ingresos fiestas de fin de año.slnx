@@ -8,6 +8,9 @@
   <Folder Name="/Desktop/">
     <Project Path="SIFFA.DesktopApp/SIFFA.DesktopApp.csproj" />
   </Folder>
+  <Folder Name="/Shared/">
+    <Project Path="SIFFA.Core/SIFFA.Core.csproj" Id="000162de-e001-4888-a62a-9ff3719aacde" />
+  </Folder>
   <Folder Name="/Web/">
     <Project Path="SIFFA.WebApp/SIFFA.WebApp.csproj" />
   </Folder>
