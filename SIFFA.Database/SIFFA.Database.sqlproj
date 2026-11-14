@@ -98,7 +98,9 @@
     <Build Include="Catalog\Indexes\UX_Area_description.sql" />
     <Build Include="Catalog\Indexes\UX_EmployeeType_EmployeeTypeName.sql" />
     <Build Include="Employee\Foreign Keys\Fk_Employee_AreaId.sql" />
+    <Build Include="Employee\Foreign Keys\Fk_Employee_EmployeeTypeId.sql" />
     <Build Include="Employee\Indexes\IX_Employee_AreaId.sql" />
+    <Build Include="Employee\Indexes\IX_Employee_EmployeeTypeId.sql" />
     <Build Include="Employee\Indexes\UX_Employee_EmployeeEmail.sql" />
     <Build Include="Employee\Indexes\UX_Employee_InernalIdentifier.sql" />
     <Build Include="AccessControl\Foreign Keys\Fk_Trace_AccessActionId.sql" />
