@@ -1,0 +1,124 @@
+@using SIFFA.Core.Models.Custom.Model
+@using SIFFA.Core.Models.Custom.Request.AccessControl
+@using SIFFA.Core.Services.AccessControlService
+@inject IAccessControlService AccessControl
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(AccessType == AccessType.Entry ? "Registrar ingreso" : "Registrar egreso")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-3">
+            Escanea el código de barras o escribe el número, nombre o correo institucional y presiona Enter.
+        </MudText>
+
+        <MudTextField T="string" @bind-Value="_term" Immediate="true" AutoFocus="true" Disabled="@_busy"
+                      Label="Código, nombre o correo" Variant="Variant.Outlined"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.QrCodeScanner"
+                      OnKeyDown="OnKeyDown" />
+
+        @if (_busy)
+        {
+            <MudProgressLinear Indeterminate="true" Class="mt-2" />
+        }
+
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Warning" Class="mt-3">@_error</MudAlert>
+        }
+
+        @if (_matches.Count > 1)
+        {
+            <MudText Typo="Typo.subtitle2" Class="mt-4">Varias coincidencias, elige al empleado:</MudText>
+            <MudList T="EmployeeSearchResult" Dense="true" Clickable="true">
+                @foreach (var m in _matches)
+                {
+                    var match = m;
+                    <MudListItem T="EmployeeSearchResult" OnClick="@(() => Register(match.EmployeeNumber))">
+                        <MudText Typo="Typo.body1">@match.FullName</MudText>
+                        <MudText Typo="Typo.caption">No. @match.EmployeeNumber · @match.Area · @match.Email</MudText>
+                    </MudListItem>
+                }
+            </MudList>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cerrar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public AccessType AccessType { get; set; }
+
+    private string? _term;
+    private string? _error;
+    private bool _busy;
+    private List<EmployeeSearchResult> _matches = new();
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" || e.Key == "NumpadEnter")
+            await Submit();
+    }
+
+    private async Task Submit()
+    {
+        if (_busy) return;
+
+        var term = _term?.Trim();
+        if (string.IsNullOrEmpty(term))
+            return;
+
+        _error = null;
+        _matches = new();
+        _busy = true;
+        StateHasChanged();
+        await Task.Yield();
+
+        try
+        {
+            var found = AccessControl.SearchEmployees(term);
+            if (found.Count == 0)
+            {
+                _error = "No se encontró ningún empleado con ese dato.";
+                _term = string.Empty;
+            }
+            else if (found.Count == 1)
+            {
+                Register(found[0].EmployeeNumber);
+            }
+            else
+            {
+                _matches = found;
+            }
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private void Register(string employeeNumber)
+    {
+        var response = AccessControl.AddTrace(new InsertTraceAccessControl
+        {
+            IdentifierNumber = employeeNumber,
+            AccessType = AccessType,
+        });
+
+        if (response.status)
+        {
+            MudDialog.Close(DialogResult.Ok(response));
+            return;
+        }
+
+        // Falló (por ejemplo, movimiento repetido): se avisa y se deja listo para el siguiente código.
+        _error = response.message;
+        _matches = new();
+        _term = string.Empty;
+    }
+}

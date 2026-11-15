@@ -1,0 +1,125 @@
+@using SIFFA.Core.Models.Custom.Model
+@using SIFFA.Core.Models.Custom.Request.AccessControl
+@using SIFFA.Core.Models.Custom.Response
+@using SIFFA.Core.Services.AccessControlService
+@inject IAccessControlService AccessControl
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Response.employeeName</MudText>
+        <MudText Typo="Typo.caption">No. @Response.employeeNumber</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudAlert Severity="Severity.Success" Class="mb-4">@Response.message</MudAlert>
+
+        @if (_rows.Count == 0)
+        {
+            <MudText Typo="Typo.body1">Este empleado no tiene boletos por entregar.</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.subtitle1" GutterBottom="true">Boletos por entregar</MudText>
+            <MudText Typo="Typo.body2" Class="mb-3">Marca los que se entregaron y presiona "Guardar entregas".</MudText>
+
+            <MudSimpleTable Dense="true" Outlined="true">
+                <thead>
+                    <tr>
+                        <th>Boleto</th>
+                        <th style="text-align:right">Cantidad</th>
+                        <th style="text-align:center">Entregado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _rows)
+                    {
+                        <tr>
+                            <td>@row.Name</td>
+                            <td style="text-align:right">@row.Quantity</td>
+                            <td style="text-align:center">
+                                <MudCheckBox T="bool" @bind-Value="row.Delivered" Disabled="@(row.AlreadyDelivered || _saving)"
+                                             Color="Color.Primary" Size="Size.Medium" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+
+            @if (_error is not null)
+            {
+                <MudAlert Severity="Severity.Error" Class="mt-3">@_error</MudAlert>
+            }
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close" Disabled="@_saving">@(_rows.Count == 0 ? "Cerrar" : "Omitir")</MudButton>
+        @if (_rows.Count > 0)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save"
+                       Disabled="@(_saving || !_rows.Any(r => r.Delivered && !r.AlreadyDelivered))">
+                Guardar entregas
+            </MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public AddTraceResponse Response { get; set; } = default!;
+
+    private sealed class Row
+    {
+        public Guid AddTypeId { get; init; }
+        public string Name { get; init; } = string.Empty;
+        public int Quantity { get; init; }
+        public bool AlreadyDelivered { get; init; }
+        public bool Delivered { get; set; }
+    }
+
+    private List<Row> _rows = new();
+    private bool _saving;
+    private string? _error;
+
+    protected override void OnParametersSet()
+    {
+        _rows = (Response.employeeAdds ?? new List<AddEmployeeModel>())
+            .Select(a => new Row
+            {
+                AddTypeId = a.addTypeId,
+                Name = a.name,
+                Quantity = a.quantity,
+                AlreadyDelivered = a.deliveryAdd,
+                Delivered = a.deliveryAdd,
+            })
+            .ToList();
+    }
+
+    private void Close() => MudDialog.Close(DialogResult.Ok(0));
+
+    private void Save()
+    {
+        _saving = true;
+        _error = null;
+        try
+        {
+            var result = AccessControl.SaveDeliveries(new SaveDeliveriesRequest
+            {
+                EmployeeNumber = Response.employeeNumber ?? string.Empty,
+                DeliveredAddTypeIds = _rows.Where(r => r.Delivered && !r.AlreadyDelivered).Select(r => r.AddTypeId).ToList(),
+            });
+
+            if (result.IsSuccess)
+                MudDialog.Close(DialogResult.Ok(_rows.Count(r => r.Delivered && !r.AlreadyDelivered)));
+            else
+                _error = result.Message;
+        }
+        catch (Exception ex)
+        {
+            _error = $"No se pudieron guardar las entregas: {ex.Message}";
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

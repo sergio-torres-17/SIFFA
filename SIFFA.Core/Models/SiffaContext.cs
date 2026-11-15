@@ -99,7 +99,11 @@ public partial class SiffaContext : DbContext
 
             entity.HasIndex(e => e.AddTypeId, "IX_AddTypeEmployee_AddTypeId");
 
-            entity.HasIndex(e => new { e.EmployeeId, e.AddTypeId }, "UX_AddTypeEmployee_EmployeeId_AddTypeId").IsUnique();
+            entity.HasIndex(e => e.AreaId, "IX_AddTypeEmployee_AreaId");
+
+            entity.HasIndex(e => e.EmployeeTypeId, "IX_AddTypeEmployee_EmployeeTypeId");
+
+            entity.HasIndex(e => new { e.EmployeeTypeId, e.AddTypeId, e.AreaId }, "UX_AddTypeEmployee_EmployeeTypeId_AddTypeId_AreaId").IsUnique();
 
             entity.Property(e => e.InsertionDate)
                 .HasDefaultValueSql("(getdate())")
@@ -110,10 +114,17 @@ public partial class SiffaContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("Fk_AddTypeEmployee_AddTypeId");
 
-            entity.HasOne(d => d.Employee).WithMany(p => p.AddTypeEmployees)
-                .HasForeignKey(d => d.EmployeeId)
+            entity.Property(e => e.Quantity).HasDefaultValue(0);
+
+            entity.HasOne(d => d.Area).WithMany(p => p.AddTypeEmployees)
+                .HasForeignKey(d => d.AreaId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("Fk_AddTypeEmployee_EmployeeId");
+                .HasConstraintName("Fk_AddTypeEmployee_AreaId");
+
+            entity.HasOne(d => d.EmployeeType).WithMany(p => p.AddTypeEmployees)
+                .HasForeignKey(d => d.EmployeeTypeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("Fk_AddTypeEmployee_EmployeeTypeId");
         });
 
         modelBuilder.Entity<Area>(entity =>
@@ -140,6 +151,8 @@ public partial class SiffaContext : DbContext
 
             entity.HasIndex(e => e.AreaId, "IX_Employee_AreaId");
 
+            entity.HasIndex(e => e.EmployeeTypeId, "IX_Employee_EmployeeTypeId");
+
             entity.HasIndex(e => e.EmployeeEmail, "UX_Employee_EmployeeEmail").IsUnique();
 
             entity.HasIndex(e => e.InernalIdentifier, "UX_Employee_InernalIdentifier").IsUnique();
@@ -157,6 +170,11 @@ public partial class SiffaContext : DbContext
                 .HasForeignKey(d => d.AreaId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("Fk_Employee_AreaId");
+
+            entity.HasOne(d => d.EmployeeType).WithMany(p => p.Employees)
+                .HasForeignKey(d => d.EmployeeTypeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("Fk_Employee_EmployeeTypeId");
         });
 
         modelBuilder.Entity<EmployeeType>(entity =>

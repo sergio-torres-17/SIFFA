@@ -1,6 +1,411 @@
 ﻿@page "/UploadEmployee"
-<PageTitle>Registro de empleados masiva</PageTitle>
+@using Microsoft.AspNetCore.Components.Forms
+@using SIFFA.Core.Models
+@using SIFFA.Core.Models.Custom.Request.Employeees
+@using SIFFA.Core.Services.EmployeeService
+@inject IEmployeeService EmployeeService
+@inject ISnackbar Snackbar
+
+<PageTitle>Subir empleados · SIFFA</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Subir empleados</MudText>
+<MudText Typo="Typo.body1" Class="mb-6">
+    Carga masiva de empleados desde Excel y asignación de los adicionales (boletos) que recibirá cada uno.
+</MudText>
+
+@if (_result is { IsSuccess: true })
+{
+    <MudAlert Severity="Severity.Success" Variant="Variant.Filled" Class="mb-4">@_result.Message</MudAlert>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StartOver">Cargar otro archivo</MudButton>
+}
+else
+{
+    <MudStepper @ref="_stepper" Linear="true" ShowResetButton="false" ActiveIndex="_step" ActiveIndexChanged="OnStepChanged">
+        <ActionContent></ActionContent>
+        <ChildContent>
+
+            @* ───────── Paso 1: Excel ───────── *@
+            <MudStep Title="Archivo de empleados">
+                <MudPaper Class="pa-4 mt-4" Outlined="true">
+                    <MudText Typo="Typo.subtitle1" GutterBottom="true">Sube un archivo Excel (.xlsx)</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-3">
+                        La primera hoja debe tener encabezados en el renglón 1 y estas columnas, en este orden:
+                    </MudText>
+                    <MudSimpleTable Dense="true" Class="mb-4" Outlined="true">
+                        <thead>
+                            <tr>
+                                <th>A · Tipo de empleado</th>
+                                <th>B · Número</th>
+                                <th>C · Nombre</th>
+                                <th>D · Apellidos</th>
+                                <th>E · Área</th>
+                                <th>F · Correo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Interno</td><td>1001</td><td>Ana</td><td>López Ruiz</td><td>Ventas</td><td>ana@empresa.com</td>
+                            </tr>
+                        </tbody>
+                    </MudSimpleTable>
+
+                    <MudFileUpload T="IBrowserFile" Accept=".xlsx" FilesChanged="OnFileSelected">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.UploadFile" Disabled="@_reading">
+                                Elegir archivo
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+
+                    @if (_reading)
+                    {
+                        <MudProgressLinear Indeterminate="true" Class="mt-4" />
+                    }
+
+                    @if (_readError is not null)
+                    {
+                        <MudAlert Severity="Severity.Error" Class="mt-4">@_readError</MudAlert>
+                    }
+                    else if (_rows.Count > 0)
+                    {
+                        <MudAlert Severity="Severity.Success" Class="mt-4">
+                            <b>@_fileName</b>: se leyeron @_rows.Count empleados,
+                            @_areas.Count áreas y @_types.Count tipos de empleado.
+                        </MudAlert>
+                    }
+
+                    @if (_warnings.Count > 0)
+                    {
+                        <MudAlert Severity="Severity.Warning" Class="mt-2">
+                            <MudText Typo="Typo.body2">Se omitieron @_warnings.Count renglones incompletos:</MudText>
+                            @foreach (var w in _warnings.Take(10))
+                            {
+                                <MudText Typo="Typo.caption" Style="display:block">@w</MudText>
+                            }
+                            @if (_warnings.Count > 10)
+                            {
+                                <MudText Typo="Typo.caption">… y @(_warnings.Count - 10) más.</MudText>
+                            }
+                        </MudAlert>
+                    }
+                </MudPaper>
+            </MudStep>
+
+            @* ───────── Paso 2: rubro ───────── *@
+            <MudStep Title="Rubro de asignación">
+                <MudPaper Class="pa-4 mt-4" Outlined="true">
+                    <MudText Typo="Typo.subtitle1" GutterBottom="true">Datos encontrados en el archivo</MudText>
+
+                    <MudText Typo="Typo.body2">Áreas (@_areas.Count)</MudText>
+                    <div class="mb-3">
+                        @foreach (var a in _areas)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">@a</MudChip>
+                        }
+                    </div>
+
+                    <MudText Typo="Typo.body2">Tipos de empleado (@_types.Count)</MudText>
+                    <div class="mb-4">
+                        @foreach (var t in _types)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Secondary" Variant="Variant.Outlined">@t</MudChip>
+                        }
+                    </div>
+
+                    <MudText Typo="Typo.subtitle1" GutterBottom="true">¿Por qué rubro se asignarán los adicionales?</MudText>
+                    <MudRadioGroup T="AddAssignmentMode?" Value="_mode" ValueChanged="OnModeChanged">
+                        <MudRadio T="AddAssignmentMode?" Value="@((AddAssignmentMode?)AddAssignmentMode.ByArea)" Color="Color.Primary">Por área</MudRadio>
+                        <MudRadio T="AddAssignmentMode?" Value="@((AddAssignmentMode?)AddAssignmentMode.ByEmployeeType)" Color="Color.Primary">Por tipo de empleado</MudRadio>
+                    </MudRadioGroup>
+                </MudPaper>
+            </MudStep>
+
+            @* ───────── Paso 3: cantidades ───────── *@
+            <MudStep Title="Asignación de adicionales">
+                <MudPaper Class="pa-4 mt-4" Outlined="true">
+                    @if (_addTypes.Count == 0)
+                    {
+                        <MudAlert Severity="Severity.Warning">
+                            No hay tipos de adicional en el catálogo (<code>[Catalog].[AddType]</code>). Agrega al menos uno
+                            (boleto de bebida, comida, premio…) para poder asignar cantidades.
+                        </MudAlert>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.subtitle1" GutterBottom="true">
+                            Adicionales por @(_mode == AddAssignmentMode.ByArea ? "área" : "tipo de empleado")
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mb-3">
+                            Indica cuántos adicionales recibe <b>cada empleado</b> del rubro. Usa 0 para ninguno.
+                        </MudText>
+                        <MudSimpleTable Dense="true" Outlined="true" Style="overflow-x:auto">
+                            <thead>
+                                <tr>
+                                    <th>@(_mode == AddAssignmentMode.ByArea ? "Área" : "Tipo de empleado")</th>
+                                    <th>Empleados</th>
+                                    @foreach (var add in _addTypes)
+                                    {
+                                        <th>@add.AddTypeName</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var key in CurrentKeys)
+                                {
+                                    <tr>
+                                        <td>@key</td>
+                                        <td>@CountFor(key)</td>
+                                        @foreach (var add in _addTypes)
+                                        {
+                                            var addId = add.AddTypeId;
+                                            <td style="min-width:110px">
+                                                <MudNumericField T="int" Value="@GetQty(key, addId)"
+                                                                 ValueChanged="@((int v) => SetQty(key, addId, v))"
+                                                                 Min="0" Max="99" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                                                 HideSpinButtons="false" />
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </MudSimpleTable>
+                    }
+                </MudPaper>
+            </MudStep>
+
+            @* ───────── Paso 4: resumen ───────── *@
+            <MudStep Title="Resumen">
+                <MudPaper Class="pa-4 mt-4" Outlined="true">
+                    <MudText Typo="Typo.subtitle1" GutterBottom="true">Resumen de la carga</MudText>
+
+                    <MudGrid Class="mb-2">
+                        <MudItem xs="12" sm="4">
+                            <MudText Typo="Typo.caption">Empleados leídos</MudText>
+                            <MudText Typo="Typo.h5">@_rows.Count</MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudText Typo="Typo.caption">Asignación por</MudText>
+                            <MudText Typo="Typo.h5">@(_mode == AddAssignmentMode.ByArea ? "Área" : "Tipo de empleado")</MudText>
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudText Typo="Typo.caption">Adicionales a entregar</MudText>
+                            <MudText Typo="Typo.h5">@TotalAdds</MudText>
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudText Typo="Typo.body2" Class="mb-3">
+                        @_areas.Count áreas y @_types.Count tipos de empleado se crearán solo si aún no existen.
+                    </MudText>
+
+                    <MudSimpleTable Dense="true" Outlined="true" Style="overflow-x:auto">
+                        <thead>
+                            <tr>
+                                <th>@(_mode == AddAssignmentMode.ByArea ? "Área" : "Tipo de empleado")</th>
+                                <th>Empleados</th>
+                                @foreach (var add in _addTypes)
+                                {
+                                    <th>@add.AddTypeName (c/u)</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var key in CurrentKeys)
+                            {
+                                <tr>
+                                    <td>@key</td>
+                                    <td>@CountFor(key)</td>
+                                    @foreach (var add in _addTypes)
+                                    {
+                                        <td>@GetQty(key, add.AddTypeId)</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+
+                    @if (_result is { IsSuccess: false })
+                    {
+                        <MudAlert Severity="Severity.Error" Class="mt-4">@_result.Message</MudAlert>
+                    }
+                </MudPaper>
+            </MudStep>
+
+        </ChildContent>
+    </MudStepper>
+
+    @* Botones fuera del stepper: así se vuelven a evaluar cada vez que cambia el estado de la página. *@
+            @* Botones propios: cada paso se habilita solo cuando su información está completa. *@
+            <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-6" Style="width:100%">
+                <MudButton Variant="Variant.Text"
+                           Disabled="@(!_stepper.PreviousStepEnabled || _saving)"
+                           OnClick="@(() => _stepper.PreviousStepAsync())">Anterior</MudButton>
+    
+                @if (_step == 3)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@_saving"
+                               StartIcon="@Icons.Material.Filled.CheckCircle" OnClick="Register">
+                        @if (_saving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Registrando…</span>
+                        }
+                        else
+                        {
+                            <span>Terminar y registrar</span>
+                        }
+                    </MudButton>
+                }
+                else
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               Disabled="@(!CanContinue(_step))"
+                               OnClick="@(() => _stepper.NextStepAsync())">Siguiente</MudButton>
+                }
+            </MudStack>
+}
 
 @code {
+    private const long MaxFileSize = 10 * 1024 * 1024;
 
+    private MudStepper _stepper = default!;
+    private int _step;
+    private void OnStepChanged(int index) => _step = index;
+    private List<EmployeeImportRow> _rows = new();
+    private List<string> _warnings = new();
+    private List<string> _areas = new();
+    private List<string> _types = new();
+    private List<AddType> _addTypes = new();
+    private AddAssignmentMode? _mode;
+    private readonly Dictionary<string, Dictionary<Guid, int>> _quantities = new(StringComparer.OrdinalIgnoreCase);
+
+    private string? _fileName;
+    private string? _readError;
+    private bool _reading;
+    private bool _saving;
+    private SIFFA.Core.Models.Custom.GenericReponse? _result;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _addTypes = await EmployeeService.GetAddTypesAsync();
+    }
+
+    private IEnumerable<string> CurrentKeys => _mode == AddAssignmentMode.ByEmployeeType ? _types : _areas;
+
+    private int CountFor(string key) => _mode == AddAssignmentMode.ByEmployeeType
+        ? _rows.Count(r => string.Equals(r.EmployeeTypeName, key, StringComparison.OrdinalIgnoreCase))
+        : _rows.Count(r => string.Equals(r.AreaName, key, StringComparison.OrdinalIgnoreCase));
+
+    private int TotalAdds => CurrentKeys.Sum(k => CountFor(k) * _addTypes.Sum(a => GetQty(k, a.AddTypeId)));
+
+    private bool CanContinue(int step) => step switch
+    {
+        0 => _rows.Count > 0 && !_reading,
+        1 => _mode is not null,
+        2 => _addTypes.Count > 0 && TotalAdds > 0,
+        _ => false,
+    };
+
+    private int GetQty(string key, Guid addTypeId) =>
+        _quantities.TryGetValue(key, out var byType) && byType.TryGetValue(addTypeId, out var q) ? q : 0;
+
+    private void SetQty(string key, Guid addTypeId, int value)
+    {
+        if (!_quantities.TryGetValue(key, out var byType))
+            _quantities[key] = byType = new Dictionary<Guid, int>();
+        byType[addTypeId] = Math.Max(0, value);
+    }
+
+    private void OnModeChanged(AddAssignmentMode? mode)
+    {
+        _mode = mode;
+        _quantities.Clear(); // las cantidades dependen del rubro elegido
+    }
+
+    private async Task OnFileSelected(IBrowserFile? file)
+    {
+        if (file is null) return;
+
+        _reading = true;
+        _readError = null;
+        _result = null;
+        _rows = new();
+        _warnings = new();
+        _areas = new();
+        _types = new();
+        _quantities.Clear();
+        _fileName = file.Name;
+
+        try
+        {
+            if (!file.Name.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("El archivo debe ser un Excel .xlsx.");
+
+            using var ms = new MemoryStream();
+            await using (var stream = file.OpenReadStream(MaxFileSize))
+                await stream.CopyToAsync(ms);
+            ms.Position = 0;
+
+            var read = EmployeeExcelReader.Read(ms);
+            _rows = read.Rows;
+            _warnings = read.Warnings;
+            _areas = _rows.Select(r => r.AreaName).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
+            _types = _rows.Select(r => r.EmployeeTypeName).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
+
+            if (_rows.Count == 0)
+                _readError = "No se encontró ningún empleado válido en el archivo.";
+        }
+        catch (Exception ex)
+        {
+            _readError = $"No se pudo leer el archivo: {ex.Message}";
+        }
+        finally
+        {
+            _reading = false;
+        }
+    }
+
+    private async Task Register()
+    {
+        _saving = true;
+        _result = null;
+        try
+        {
+            var request = new EmployeeImportRequest
+            {
+                Employees = _rows,
+                Mode = _mode ?? AddAssignmentMode.ByArea,
+                Allocations = CurrentKeys
+                    .SelectMany(k => _addTypes.Select(a => new AddAllocation
+                    {
+                        Key = k,
+                        AddTypeId = a.AddTypeId,
+                        Quantity = GetQty(k, a.AddTypeId),
+                    }))
+                    .Where(a => a.Quantity > 0)
+                    .ToList(),
+            };
+
+            _result = await EmployeeService.RegisterEmployeeImportAsync(request);
+            if (_result.IsSuccess)
+                Snackbar.Add("Carga registrada correctamente.", Severity.Success);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void StartOver()
+    {
+        _rows = new();
+        _warnings = new();
+        _areas = new();
+        _types = new();
+        _quantities.Clear();
+        _mode = null;
+        _fileName = null;
+        _readError = null;
+        _result = null;
+    }
 }

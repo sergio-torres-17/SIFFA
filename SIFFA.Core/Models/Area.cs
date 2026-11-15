@@ -11,5 +11,7 @@ public partial class Area
 
     public DateTime InsertionDate { get; set; }
 
+    public virtual ICollection<AddTypeEmployee> AddTypeEmployees { get; set; } = new List<AddTypeEmployee>();
+
     public virtual ICollection<Employee> Employees { get; set; } = new List<Employee>();
 }

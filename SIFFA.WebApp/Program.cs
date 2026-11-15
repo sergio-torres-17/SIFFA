@@ -27,6 +27,8 @@ builder.Services.AddDbContext<SiffaContext>(options =>
 builder.Services.AddSingleton<IEncryptionService, EncryptionService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IManagementPlattform, ManagementPlattform>();
+builder.Services.AddScoped<SIFFA.Core.Services.AccessControlService.IAccessControlService, SIFFA.Core.Services.AccessControlService.AccessControlService>();
+builder.Services.AddScoped<SIFFA.Core.Services.DashboardService.IDashboardService, SIFFA.Core.Services.DashboardService.DashboardService>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

@@ -1,10 +1,251 @@
 ﻿@page "/"
+@using SIFFA.Core.Models.Custom.Response
+@using SIFFA.Core.Services.DashboardService
+@implements IDisposable
+@inject IDashboardService DashboardService
 
 <PageTitle>Inicio · SIFFA</PageTitle>
 
-<MudText Typo="Typo.h4" GutterBottom="true">Control de ingresos</MudText>
-<MudText Typo="Typo.body1" Class="mb-6">Fiesta de fin de año: ingreso de empleados y entrega de adicionales.</MudText>
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+    <div>
+        <MudText Typo="Typo.h4">Control de ingresos</MudText>
+        <MudText Typo="Typo.body2">
+            Fiesta de fin de año · @(_updatedAt is null ? "cargando…" : $"actualizado {_updatedAt:HH:mm:ss}")
+        </MudText>
+    </div>
+    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Refresh"
+               Disabled="@_loading" OnClick="Load">Actualizar</MudButton>
+</MudStack>
 
-<MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
-    Aquí irán los módulos de empleados, ingresos y adicionales.
-</MudAlert>
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+}
+
+@if (_data is null)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else
+{
+    @if (!_data.HasAccessActions)
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mb-4">
+            Aún no hay acciones de acceso de entrada/salida en <code>[Catalog].[AccessAction]</code>
+            (por ejemplo <b>Entrada</b> y <b>Salida</b>), por eso los accesos aparecen en cero.
+        </MudAlert>
+    }
+
+    @* ───────── Indicadores ───────── *@
+    <MudGrid Class="mb-2">
+        <MudItem xs="12" sm="6" md="2">
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.People" Color="Color.Secondary" />
+                    <div>
+                        <MudText Typo="Typo.caption">Registrados</MudText>
+                        <MudText Typo="Typo.h5">@_data.TotalEmployees</MudText>
+                    </div>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="2">
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Login" Color="Color.Primary" />
+                    <div>
+                        <MudText Typo="Typo.caption">Han ingresado</MudText>
+                        <MudText Typo="Typo.h5">@_data.Entered</MudText>
+                    </div>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="2">
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.HourglassEmpty" Color="Color.Warning" />
+                    <div>
+                        <MudText Typo="Typo.caption">Faltan por ingresar</MudText>
+                        <MudText Typo="Typo.h5">@_data.Pending</MudText>
+                    </div>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.MeetingRoom" Color="Color.Success" />
+                    <div>
+                        <MudText Typo="Typo.caption">Dentro ahora</MudText>
+                        <MudText Typo="Typo.h5">@_data.Inside</MudText>
+                    </div>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Logout" Color="Color.Info" />
+                    <div>
+                        <MudText Typo="Typo.caption">Ya egresaron</MudText>
+                        <MudText Typo="Typo.h5">@_data.Exited</MudText>
+                    </div>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudPaper Class="pa-4 mb-4" Outlined="true">
+        <MudStack Row="true" Justify="Justify.SpaceBetween">
+            <MudText Typo="Typo.body2">Asistencia: ingresaron @_data.Entered de @_data.TotalEmployees</MudText>
+            <MudText Typo="Typo.body2">@Percent(_data.Entered, _data.TotalEmployees)%</MudText>
+        </MudStack>
+        <MudProgressLinear Color="Color.Primary" Value="@Percent(_data.Entered, _data.TotalEmployees)" Max="100" Class="mt-2" />
+    </MudPaper>
+
+    @* ───────── Gráficas ───────── *@
+    <MudGrid Class="mb-2">
+        <MudItem xs="12" md="5">
+            <MudPaper Class="pa-4" Outlined="true" Style="height:100%">
+                <MudText Typo="Typo.h6" GutterBottom="true">Estado de los empleados</MudText>
+                <MudChart ChartType="ChartType.Donut" ChartSeries="_statusSeries" ChartLabels="_statusLabels"
+                          Width="100%" Height="260px" />
+                <MudStack Row="true" Justify="Justify.Center" Spacing="4" Class="mt-2">
+                    <MudText Typo="Typo.caption">Faltan @_data.Pending</MudText>
+                    <MudText Typo="Typo.caption">Dentro @_data.Inside</MudText>
+                    <MudText Typo="Typo.caption">Egresaron @_data.Exited</MudText>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="7">
+            <MudPaper Class="pa-4" Outlined="true" Style="height:100%">
+                <MudText Typo="Typo.h6" GutterBottom="true">Ingresos por hora</MudText>
+                @if (_data.EntriesByHour.Count == 0)
+                {
+                    <MudText Typo="Typo.body2">Todavía no hay ingresos registrados.</MudText>
+                }
+                else
+                {
+                    <MudChart ChartType="ChartType.Bar" ChartSeries="_hourSeries" XAxisLabels="_hourLabels"
+                              Width="100%" Height="260px" />
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @* ───────── Tablas ───────── *@
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudText Typo="Typo.h6" GutterBottom="true">Por área</MudText>
+                <MudTable Items="_data.ByArea" Dense="true" Hover="true" Elevation="0" Breakpoint="Breakpoint.None">
+                    <HeaderContent>
+                        <MudTh>Área</MudTh>
+                        <MudTh Style="text-align:right">Registrados</MudTh>
+                        <MudTh Style="text-align:right">Ingresaron</MudTh>
+                        <MudTh Style="text-align:right">Faltan</MudTh>
+                        <MudTh Style="text-align:right">Egresaron</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@context.Area</MudTd>
+                        <MudTd Style="text-align:right">@context.Registered</MudTd>
+                        <MudTd Style="text-align:right">@context.Entered</MudTd>
+                        <MudTd Style="text-align:right">@context.Pending</MudTd>
+                        <MudTd Style="text-align:right">@context.Exited</MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager PageSizeOptions="new int[] { 5, 10, 25 }" InfoFormat="{first_item}-{last_item} de {all_items}"
+                                       RowsPerPageString="Filas" />
+                    </PagerContent>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudText Typo="Typo.h6" GutterBottom="true">Últimos accesos</MudText>
+                @if (_data.LatestAccesses.Count == 0)
+                {
+                    <MudText Typo="Typo.body2">Todavía no hay accesos registrados.</MudText>
+                }
+                else
+                {
+                    <MudTable Items="_data.LatestAccesses" Dense="true" Hover="true" Elevation="0" Breakpoint="Breakpoint.None">
+                        <HeaderContent>
+                            <MudTh>Hora</MudTh>
+                            <MudTh>Empleado</MudTh>
+                            <MudTh>Área</MudTh>
+                            <MudTh>Acción</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@context.Date.ToString("dd/MM HH:mm:ss")</MudTd>
+                            <MudTd>@context.EmployeeName <MudText Typo="Typo.caption" Inline="true">(@context.EmployeeNumber)</MudText></MudTd>
+                            <MudTd>@context.Area</MudTd>
+                            <MudTd>
+                                <MudChip T="string" Size="Size.Small" Color="@(context.IsEntry ? Color.Success : Color.Info)"
+                                         Variant="Variant.Outlined">@context.Action</MudChip>
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private DashboardSummary? _data;
+    private DateTime? _updatedAt;
+    private string? _error;
+    private bool _loading;
+    private Timer? _timer;
+
+    private List<ChartSeries<double>> _statusSeries = new();
+    private string[] _statusLabels = Array.Empty<string>();
+    private List<ChartSeries<double>> _hourSeries = new();
+    private string[] _hourLabels = Array.Empty<string>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Load();
+        // Se refresca solo cada 30 segundos para seguir los accesos durante la fiesta.
+        _timer = new Timer(async _ => await InvokeAsync(Load), null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    private async Task Load()
+    {
+        if (_loading) return;
+        _loading = true;
+        try
+        {
+            var data = await DashboardService.GetSummaryAsync();
+            _data = data;
+            _updatedAt = DateTime.Now;
+            _error = null;
+
+            _statusLabels = new[] { "Faltan por ingresar", "Dentro", "Egresaron" };
+            _statusSeries = new List<ChartSeries<double>>
+            {
+                new() { Name = "Empleados", Data = new double[] { data.Pending, data.Inside, data.Exited } },
+            };
+
+            _hourLabels = data.EntriesByHour.Select(h => $"{h.Hour:00}:00").ToArray();
+            _hourSeries = new List<ChartSeries<double>>
+            {
+                new() { Name = "Ingresos", Data = data.EntriesByHour.Select(h => (double)h.Entries).ToArray() },
+            };
+        }
+        catch (Exception ex)
+        {
+            _error = $"No se pudo cargar el dashboard: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private static double Percent(int part, int total) => total == 0 ? 0 : Math.Round(part * 100.0 / total, 1);
+
+    public void Dispose() => _timer?.Dispose();
+}

@@ -110,11 +110,14 @@
     <Build Include="Add\Foreign Keys\Fk_AddEmployee_AddTypeId.sql" />
     <Build Include="Add\Foreign Keys\Fk_AddEmployee_EmployeeId.sql" />
     <Build Include="Add\Foreign Keys\Fk_AddTypeEmployee_AddTypeId.sql" />
-    <Build Include="Add\Foreign Keys\Fk_AddTypeEmployee_EmployeeId.sql" />
+    <Build Include="Add\Foreign Keys\Fk_AddTypeEmployee_EmployeeTypeId.sql" />
+    <Build Include="Add\Foreign Keys\Fk_AddTypeEmployee_AreaId.sql" />
+    <Build Include="Add\Indexes\IX_AddTypeEmployee_AreaId.sql" />
     <Build Include="Add\Indexes\IX_AddEmployee_AddTypeId.sql" />
     <Build Include="Add\Indexes\IX_AddEmployee_EmployeeId_AddTypeId.sql" />
     <Build Include="Add\Indexes\IX_AddTypeEmployee_AddTypeId.sql" />
-    <Build Include="Add\Indexes\UX_AddTypeEmployee_EmployeeId_AddTypeId.sql" />
+    <Build Include="Add\Indexes\IX_AddTypeEmployee_EmployeeTypeId.sql" />
+    <Build Include="Add\Indexes\UX_AddTypeEmployee_EmployeeTypeId_AddTypeId_AreaId.sql" />
     <Build Include="Schemas\Security.sql" />
     <Build Include="Security\Tables\User.sql" />
     <Build Include="Security\Tables\Credential.sql" />

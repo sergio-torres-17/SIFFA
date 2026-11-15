@@ -1,6 +1,114 @@
 ﻿@page "/AccessControl"
-<h3>AccessControl</h3>
+@using SIFFA.Core.Models.Custom.Request.AccessControl
+@using SIFFA.Core.Models.Custom.Response
+@using SIFFA.WebApp.Components.Dialogs
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Control de accesos · SIFFA</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Control de accesos</MudText>
+<MudText Typo="Typo.body1" Class="mb-6">
+    Registra el ingreso o el egreso de los empleados escaneando su código, o buscándolos por nombre o correo.
+</MudText>
+
+<MudGrid Class="mb-4">
+    <MudItem xs="12" sm="6">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Size="Size.Large"
+                   StartIcon="@Icons.Material.Filled.Login" Disabled="@_active" OnClick="@(() => Run(AccessType.Entry))"
+                   Style="height:96px;font-size:1.2rem">
+            Registrar ingreso
+        </MudButton>
+    </MudItem>
+    <MudItem xs="12" sm="6">
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true" Size="Size.Large"
+                   StartIcon="@Icons.Material.Filled.Logout" Disabled="@_active" OnClick="@(() => Run(AccessType.Exit))"
+                   Style="height:96px;font-size:1.2rem">
+            Registrar egreso
+        </MudButton>
+    </MudItem>
+</MudGrid>
+
+<MudPaper Class="pa-4" Outlined="true">
+    <MudText Typo="Typo.h6" GutterBottom="true">Registros de esta sesión</MudText>
+    @if (_recent.Count == 0)
+    {
+        <MudText Typo="Typo.body2">Todavía no se ha registrado ningún acceso.</MudText>
+    }
+    else
+    {
+        <MudTable Items="_recent" Dense="true" Hover="true" Elevation="0" Breakpoint="Breakpoint.None">
+            <HeaderContent>
+                <MudTh>Hora</MudTh>
+                <MudTh>Empleado</MudTh>
+                <MudTh>Movimiento</MudTh>
+                <MudTh Style="text-align:right">Boletos entregados</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.Time.ToString("HH:mm:ss")</MudTd>
+                <MudTd>@context.Name <MudText Typo="Typo.caption" Inline="true">(@context.Number)</MudText></MudTd>
+                <MudTd>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                             Color="@(context.Type == AccessType.Entry ? Color.Success : Color.Info)">
+                        @(context.Type == AccessType.Entry ? "Ingreso" : "Egreso")
+                    </MudChip>
+                </MudTd>
+                <MudTd Style="text-align:right">@context.Delivered</MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+</MudPaper>
 
 @code {
+    private sealed record Entry(DateTime Time, string Number, string Name, AccessType Type, int Delivered);
 
+    private readonly List<Entry> _recent = new();
+    private bool _active;
+
+    // Modo continuo: al terminar cada empleado se vuelve a abrir el cuadro de captura,
+    // para escanear al siguiente sin tocar el ratón. Se sale con "Cerrar".
+    private async Task Run(AccessType type)
+    {
+        _active = true;
+        try
+        {
+            var scanOptions = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true };
+            var gridOptions = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = false, BackdropClick = false };
+
+            while (true)
+            {
+                var scan = await DialogService.ShowAsync<AccessScanDialog>(
+                    type == AccessType.Entry ? "Ingreso" : "Egreso",
+                    new DialogParameters<AccessScanDialog> { { x => x.AccessType, type } },
+                    scanOptions);
+                var scanResult = await scan.Result;
+                if (scanResult is null || scanResult.Canceled || scanResult.Data is not AddTraceResponse response)
+                    break;
+
+                var delivered = 0;
+                if (response.employeeAdds is { Count: > 0 })
+                {
+                    var grid = await DialogService.ShowAsync<AccessDeliveryDialog>(
+                        "Entrega de boletos",
+                        new DialogParameters<AccessDeliveryDialog> { { x => x.Response, response } },
+                        gridOptions);
+                    var gridResult = await grid.Result;
+                    if (gridResult is { Canceled: false, Data: int count })
+                        delivered = count;
+                }
+                else
+                {
+                    Snackbar.Add(response.message, Severity.Success);
+                }
+
+                _recent.Insert(0, new Entry(DateTime.Now, response.employeeNumber ?? string.Empty,
+                    response.employeeName ?? string.Empty, type, delivered));
+                StateHasChanged();
+            }
+        }
+        finally
+        {
+            _active = false;
+        }
+    }
 }

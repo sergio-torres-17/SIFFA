@@ -1,6 +1,281 @@
 ﻿@page "/ViewCards"
-<h3>ViewCards</h3>
+@using Microsoft.AspNetCore.Components.Forms
+@using SIFFA.Core.Models.Custom.Request.Employeees
+@using SIFFA.Core.Services.EmployeeService
+@inject IEmployeeService EmployeeService
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
+
+<PageTitle>Tarjetas de invitación · SIFFA</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Tarjetas de invitación</MudText>
+<MudText Typo="Typo.body1" Class="mb-6">
+    Genera la tarjeta de invitación de cada empleado registrado, con su nombre, área, adicionales y un código QR para el acceso.
+</MudText>
+
+@if (_done is not null)
+{
+    <MudAlert Severity="Severity.Success" Variant="Variant.Filled" Class="mb-4">@_done</MudAlert>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="StartOver">Generar de nuevo</MudButton>
+}
+else
+{
+    <MudStepper @ref="_stepper" Linear="true" ShowResetButton="false" ActiveIndex="_step" ActiveIndexChanged="OnStepChanged">
+        <ActionContent></ActionContent>
+        <ChildContent>
+
+            @* ───────── Paso 1: logo ───────── *@
+            <MudStep Title="Subir logo">
+                <MudPaper Class="pa-4 mt-4" Outlined="true">
+                    <MudText Typo="Typo.subtitle1" GutterBottom="true">Sube el logo de la empresa</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-3">PNG, JPG o WebP, de hasta 2 MB. Se coloca en la esquina superior izquierda de la tarjeta.</MudText>
+
+                    <MudFileUpload T="IBrowserFile" Accept=".png,.jpg,.jpeg,.webp" FilesChanged="OnLogoSelected">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.AddPhotoAlternate" Disabled="@_reading">
+                                Elegir logo
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+
+                    @if (_logoError is not null)
+                    {
+                        <MudAlert Severity="Severity.Error" Class="mt-4">@_logoError</MudAlert>
+                    }
+                    else if (_logo is not null)
+                    {
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Class="mt-4">
+                            <div style="background:#fff;border-radius:8px;padding:8px">
+                                <img src="@_logoDataUri" alt="Logo" style="max-height:90px;max-width:220px;display:block" />
+                            </div>
+                            <MudText Typo="Typo.body2">@_logoName</MudText>
+                        </MudStack>
+                    }
+                </MudPaper>
+            </MudStep>
+
+            @* ───────── Paso 2: previsualización ───────── *@
+            <MudStep Title="Previsualizar tarjetas">
+                <MudPaper Class="pa-4 mt-4" Outlined="true">
+                    @if (_sample is null)
+                    {
+                        <MudAlert Severity="Severity.Warning">
+                            No hay empleados registrados todavía. Sube empleados en "Subir empleados" para poder previsualizar y generar las tarjetas.
+                        </MudAlert>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.subtitle1" GutterBottom="true">Tipo de código</MudText>
+                        <MudRadioGroup T="CardCodeType" Value="_codeType" ValueChanged="OnCodeTypeChanged" Class="mb-4">
+                            <MudRadio T="CardCodeType" Value="CardCodeType.Qr" Color="Color.Primary">Código QR</MudRadio>
+                            <MudRadio T="CardCodeType" Value="CardCodeType.Barcode" Color="Color.Primary">Código de barras</MudRadio>
+                        </MudRadioGroup>
+
+                        <MudText Typo="Typo.subtitle1" GutterBottom="true">Así se verá la tarjeta</MudText>
+                        <MudText Typo="Typo.body2" Class="mb-3">
+                            Ejemplo con <b>@_sample.FullName</b> (No. @_sample.EmployeeNumber).
+                        </MudText>
+                        @if (_previewUri is not null)
+                        {
+                            <img src="@_previewUri" alt="Vista previa de la tarjeta" style="width:100%;max-width:700px;border-radius:12px;display:block" />
+                        }
+                        else if (_previewError is not null)
+                        {
+                            <MudAlert Severity="Severity.Error">@_previewError</MudAlert>
+                        }
+                    }
+                </MudPaper>
+            </MudStep>
+
+            @* ───────── Paso 3: formato y generación ───────── *@
+            <MudStep Title="Confirmar y generar">
+                <MudPaper Class="pa-4 mt-4" Outlined="true">
+                    <MudText Typo="Typo.subtitle1" GutterBottom="true">Formato de exportación</MudText>
+                    <MudRadioGroup T="CardFormat" @bind-Value="_format">
+                        <MudRadio T="CardFormat" Value="CardFormat.Png" Color="Color.Primary">PNG (una imagen por empleado)</MudRadio>
+                        <MudRadio T="CardFormat" Value="CardFormat.Pdf" Color="Color.Primary">PDF (un documento por empleado)</MudRadio>
+                    </MudRadioGroup>
+                    <MudText Typo="Typo.body2" Class="mt-4">
+                        Código en la tarjeta: <b>@(_codeType == CardCodeType.Qr ? "QR" : "código de barras")</b>.
+                    </MudText>
+                    <MudText Typo="Typo.body2" Class="mt-2">
+                        Al terminar se generarán las tarjetas de <b>todos los empleados registrados</b> y se descargará un archivo .zip.
+                        Con muchos empleados puede tardar unos segundos.
+                    </MudText>
+
+                    @if (_error is not null)
+                    {
+                        <MudAlert Severity="Severity.Error" Class="mt-4">@_error</MudAlert>
+                    }
+                </MudPaper>
+            </MudStep>
+
+        </ChildContent>
+    </MudStepper>
+
+    @* Botones fuera del stepper: se reevalúan con cada cambio de estado de la página. *@
+    <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-6">
+        <MudButton Variant="Variant.Text" Disabled="@(_step == 0 || _generating)"
+                   OnClick="@(() => _stepper.PreviousStepAsync())">Anterior</MudButton>
+
+        @if (_step == 2)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@_generating"
+                       StartIcon="@Icons.Material.Filled.Download" OnClick="Generate">
+                @if (_generating)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    <span>Generando…</span>
+                }
+                else
+                {
+                    <span>Terminar y generar</span>
+                }
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Disabled="@(!CanContinue)" OnClick="Next">Siguiente</MudButton>
+        }
+    </MudStack>
+}
 
 @code {
+    private const long MaxLogoSize = 2 * 1024 * 1024;
 
+    private MudStepper _stepper = default!;
+    private int _step;
+    private void OnStepChanged(int index) => _step = index;
+
+    private byte[]? _logo;
+    private string? _logoName;
+    private string? _logoDataUri;
+    private string? _logoError;
+    private bool _reading;
+
+    private InvitationCardData? _sample;
+    private string? _previewUri;
+    private string? _previewError;
+
+    private CardCodeType _codeType = CardCodeType.Qr;
+    private CardFormat _format = CardFormat.Png;
+
+    private void OnCodeTypeChanged(CardCodeType type)
+    {
+        _codeType = type;
+        RenderPreview(); // la muestra ya está cargada: solo se vuelve a dibujar
+    }
+    private bool _generating;
+    private string? _error;
+    private string? _done;
+
+    private bool CanContinue => _step switch
+    {
+        0 => _logo is not null && !_reading,
+        1 => _sample is not null && _previewUri is not null,
+        _ => false,
+    };
+
+    private async Task OnLogoSelected(IBrowserFile? file)
+    {
+        if (file is null) return;
+
+        _reading = true;
+        _logoError = null;
+        _logo = null;
+        _logoDataUri = null;
+        _previewUri = null;
+        try
+        {
+            using var ms = new MemoryStream();
+            await using (var stream = file.OpenReadStream(MaxLogoSize))
+                await stream.CopyToAsync(ms);
+            var bytes = ms.ToArray();
+
+            // Se valida que de verdad sea una imagen que se pueda dibujar.
+            var probe = new InvitationCardData { FullName = "x", EmployeeNumber = "0", Area = "x", EmployeeType = "x" };
+            if (EmployeeService.RenderCardPreview(probe, bytes) is null)
+                throw new InvalidOperationException("El archivo no es una imagen válida.");
+
+            _logo = bytes;
+            _logoName = file.Name;
+            _logoDataUri = $"data:{file.ContentType};base64,{Convert.ToBase64String(bytes)}";
+        }
+        catch (Exception ex)
+        {
+            _logoError = $"No se pudo cargar el logo: {ex.Message}";
+        }
+        finally
+        {
+            _reading = false;
+        }
+    }
+
+    private async Task Next()
+    {
+        if (_step == 0)
+            await LoadPreview();
+        await _stepper.NextStepAsync();
+    }
+
+    private async Task LoadPreview()
+    {
+        _previewError = null;
+        _previewUri = null;
+        _sample = await EmployeeService.GetCardSampleAsync();
+        RenderPreview();
+    }
+
+    private void RenderPreview()
+    {
+        _previewError = null;
+        if (_sample is null || _logo is null) return;
+
+        var png = EmployeeService.RenderCardPreview(_sample, _logo, _codeType);
+        if (png is null)
+            _previewError = "No se pudo dibujar la tarjeta con ese logo.";
+        else
+            _previewUri = $"data:image/png;base64,{Convert.ToBase64String(png)}";
+    }
+
+    private async Task Generate()
+    {
+        if (_logo is null) return;
+
+        _generating = true;
+        _error = null;
+        try
+        {
+            var result = await EmployeeService.GenerateCardsZipAsync(_logo, _format, _codeType);
+            if (!result.IsSuccess || result.File is null)
+            {
+                _error = result.Message;
+                return;
+            }
+
+            await using var stream = new MemoryStream(result.File);
+            using var reference = new DotNetStreamReference(stream);
+            var module = await JS.InvokeAsync<IJSObjectReference>("import", "/js/download.js");
+            await module.InvokeVoidAsync("downloadFromStream", result.FileName, reference);
+
+            _done = $"{result.Message} La descarga de {result.FileName} comenzó.";
+            Snackbar.Add("Tarjetas generadas.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _error = $"No se pudo generar o descargar: {ex.Message}";
+        }
+        finally
+        {
+            _generating = false;
+        }
+    }
+
+    private void StartOver()
+    {
+        _done = null;
+        _error = null;
+        _step = 0;
+    }
 }
