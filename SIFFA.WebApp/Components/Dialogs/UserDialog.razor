@@ -1,0 +1,89 @@
+@using SIFFA.Core.Services.UserAccountService
+@inject IUserAccountService Users
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(ResetFor is null ? "Nuevo usuario" : "Cambiar contraseña")</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (ResetFor is null)
+        {
+            <MudTextField T="string" @bind-Value="_firstName" Label="Nombre" Variant="Variant.Outlined" Class="mb-3"
+                          MaxLength="100" Immediate="true" AutoFocus="true" Disabled="@_saving" />
+            <MudTextField T="string" @bind-Value="_lastName" Label="Apellidos" Variant="Variant.Outlined" Class="mb-3"
+                          MaxLength="100" Immediate="true" Disabled="@_saving" />
+            <MudTextField T="string" @bind-Value="_email" Label="Correo electrónico (será su usuario)" Variant="Variant.Outlined"
+                          Class="mb-3" MaxLength="100" InputType="InputType.Email" Immediate="true" Disabled="@_saving" />
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="mb-3">@ResetFor.FullName · @ResetFor.Email</MudText>
+        }
+
+        <MudTextField T="string" @bind-Value="_password" Label="@(ResetFor is null ? "Contraseña" : "Nueva contraseña")"
+                      Variant="Variant.Outlined" Class="mb-3" InputType="InputType.Password" Immediate="true"
+                      HelperText="@($"Mínimo {IUserAccountService.MinPasswordLength} caracteres")"
+                      AutoFocus="@(ResetFor is not null)" Disabled="@_saving" />
+        <MudTextField T="string" @bind-Value="_confirm" Label="Confirmar contraseña" Variant="Variant.Outlined"
+                      InputType="InputType.Password" Immediate="true" Disabled="@_saving" OnKeyDown="OnKeyDown" />
+
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-3">@_error</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="@_saving">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save" Disabled="@_saving">Guardar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    /// <summary>Si se indica, el diálogo solo cambia la contraseña de ese usuario; si es null, crea uno nuevo.</summary>
+    [Parameter] public UserAccountItem? ResetFor { get; set; }
+
+    private string? _firstName, _lastName, _email, _password, _confirm, _error;
+    private bool _saving;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await Save();
+    }
+
+    private async Task Save()
+    {
+        if (_saving) return;
+
+        if (_password != _confirm)
+        {
+            _error = "Las contraseñas no coinciden.";
+            return;
+        }
+
+        _saving = true;
+        _error = null;
+        try
+        {
+            var result = ResetFor is null
+                ? await Users.CreateAsync(_firstName ?? "", _lastName ?? "", _email ?? "", _password ?? "")
+                : await Users.ResetPasswordAsync(ResetFor.UserId, _password ?? "");
+
+            if (result.IsSuccess)
+                MudDialog.Close(DialogResult.Ok(result.Message));
+            else
+                _error = result.Message;
+        }
+        catch (Exception ex)
+        {
+            _error = $"No se pudo guardar: {ex.InnerException?.Message ?? ex.Message}";
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

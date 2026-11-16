@@ -1,0 +1,149 @@
+@page "/Users"
+@using System.Security.Claims
+@using SIFFA.Core.Services.UserAccountService
+@using SIFFA.WebApp.Components.Dialogs
+@inject IUserAccountService Accounts
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthState
+
+<PageTitle>Usuarios · SIFFA</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+    <div>
+        <MudText Typo="Typo.h4">Usuarios de acceso</MudText>
+        <MudText Typo="Typo.body2">Personas que pueden iniciar sesión en SIFFA (web y escritorio). El correo es su usuario.</MudText>
+    </div>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd"
+               OnClick="Create">Nuevo usuario</MudButton>
+</MudStack>
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+}
+
+<MudPaper Class="pa-4" Outlined="true">
+    <MudTable Items="_items" Dense="true" Hover="true" Elevation="0" Loading="@_loading" Breakpoint="Breakpoint.None"
+              Filter="Match">
+        <ToolBarContent>
+            <MudSpacer />
+            <MudTextField T="string" @bind-Value="_search" Immediate="true" Placeholder="Buscar" Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Style="max-width:280px" />
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>Nombre</MudTh>
+            <MudTh>Correo</MudTh>
+            <MudTh>Estado</MudTh>
+            <MudTh>Creado</MudTh>
+            <MudTh Style="text-align:right">Acciones</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.FullName @if (context.IsAdmin) { <MudChip T="string" Size="Size.Small" Color="Color.Primary" Class="ml-2">Administrador</MudChip> }</MudTd>
+            <MudTd>@context.Email</MudTd>
+            <MudTd>
+                @if (context.HasCredential)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">Con acceso</MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">Sin contraseña</MudChip>
+                }
+            </MudTd>
+            <MudTd>@context.CreatedAt.ToString("dd/MM/yyyy")</MudTd>
+            <MudTd Style="text-align:right">
+                <MudTooltip Text="@(context.HasCredential ? "Cambiar contraseña" : "Asignar contraseña")">
+                    <MudIconButton Icon="@Icons.Material.Filled.Key" Size="Size.Small" OnClick="@(() => ResetPassword(context))" />
+                </MudTooltip>
+                <MudTooltip Text="@(CanDelete(context) ? "Eliminar" : "No se puede eliminar")">
+                    <span>
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                                       Disabled="@(!CanDelete(context))" OnClick="@(() => Remove(context))" />
+                    </span>
+                </MudTooltip>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Typo="Typo.body2">No hay usuarios. Crea el primero con "Nuevo usuario".</MudText>
+        </NoRecordsContent>
+        <PagerContent>
+            <MudTablePager PageSizeOptions="new int[] { 10, 25, 50 }" InfoFormat="{first_item}-{last_item} de {all_items}"
+                           RowsPerPageString="Filas" />
+        </PagerContent>
+    </MudTable>
+</MudPaper>
+
+@code {
+    private List<UserAccountItem> _items = new();
+    private string? _search;
+    private string? _error;
+    private bool _loading = true;
+    private Guid? _currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState.GetAuthenticationStateAsync();
+        var id = state.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        _currentUserId = Guid.TryParse(id, out var guid) ? guid : null;
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        _loading = true;
+        try
+        {
+            _items = await Accounts.GetAllAsync();
+            _error = null;
+        }
+        catch (Exception ex)
+        {
+            _error = $"No se pudieron cargar los usuarios: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private bool Match(UserAccountItem item) =>
+        string.IsNullOrWhiteSpace(_search)
+        || item.FullName.Contains(_search, StringComparison.OrdinalIgnoreCase)
+        || item.Email.Contains(_search, StringComparison.OrdinalIgnoreCase);
+
+    private bool CanDelete(UserAccountItem item) => !item.IsAdmin && item.UserId != _currentUserId;
+
+    private async Task Create() => await ShowDialog("Nuevo usuario", null);
+
+    private async Task ResetPassword(UserAccountItem item) => await ShowDialog("Cambiar contraseña", item);
+
+    private async Task ShowDialog(string title, UserAccountItem? resetFor)
+    {
+        var dialog = await DialogService.ShowAsync<UserDialog>(
+            title,
+            new DialogParameters<UserDialog> { { x => x.ResetFor, resetFor } },
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false, Data: string message })
+        {
+            Snackbar.Add(message, Severity.Success);
+            await Load();
+        }
+    }
+
+    private async Task Remove(UserAccountItem item)
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            "Eliminar usuario",
+            $"¿Eliminar a {item.FullName} ({item.Email})? Ya no podrá iniciar sesión. Esta acción no se puede deshacer.",
+            yesText: "Eliminar", cancelText: "Cancelar");
+        if (confirmed != true) return;
+
+        var result = await Accounts.DeleteAsync(item.UserId, _currentUserId);
+        Snackbar.Add(result.Message, result.IsSuccess ? Severity.Success : Severity.Error);
+        if (result.IsSuccess)
+            await Load();
+    }
+}

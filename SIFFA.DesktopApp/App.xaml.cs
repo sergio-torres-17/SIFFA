@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SIFFA.Core.Models;
 using SIFFA.Core.Services.AuthService;
+using SIFFA.Core.Services.UserAccountService;
 using SIFFA.Core.Services.AccessControlService;
 using SIFFA.Core.Services.AddTypeService;
 using SIFFA.Core.Services.DashboardService;
@@ -73,6 +74,7 @@ namespace SIFFA.DesktopApp
 
             //Configure services
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IUserAccountService, UserAccountService>();
             services.AddSingleton<IEncryptionService, EncryptionService>();
             services.AddScoped<IEmployeeService, EmployeeService>();
             services.AddScoped<IManagementPlattform, ManagementPlattform>();

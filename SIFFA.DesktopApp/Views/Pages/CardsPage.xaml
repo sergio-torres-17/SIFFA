@@ -1,0 +1,97 @@
+<UserControl x:Class="SIFFA.DesktopApp.Views.Pages.CardsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,14">
+            <TextBlock Style="{StaticResource Heading}" Text="Tarjetas de invitación" />
+            <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,0"
+                       Text="Genera la tarjeta de invitación de cada empleado registrado, con su nombre, área, adicionales y un código para el acceso." />
+        </StackPanel>
+
+        <StackPanel x:Name="Steps" Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,14" />
+
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <Grid>
+                <!-- Paso 1: logo -->
+                <Border x:Name="Step0" Style="{StaticResource Panel}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="Sube el logo de la empresa" />
+                        <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,12"
+                                   Text="PNG, JPG o WebP, de hasta 2 MB. Se coloca en la esquina superior izquierda de la tarjeta." />
+                        <Button x:Name="BtnLogo" Style="{StaticResource PrimaryButton}" Content="Elegir logo" HorizontalAlignment="Left" Click="OnPickLogo" />
+                        <TextBlock x:Name="TxtLogoError" Foreground="{StaticResource BrushError}" TextWrapping="Wrap" Margin="0,14,0,0" Visibility="Collapsed" />
+                        <StackPanel x:Name="LogoInfo" Orientation="Horizontal" Margin="0,14,0,0" Visibility="Collapsed">
+                            <Border Background="White" CornerRadius="8" Padding="8">
+                                <Image x:Name="LogoImage" MaxHeight="90" MaxWidth="220" />
+                            </Border>
+                            <TextBlock x:Name="TxtLogoName" Style="{StaticResource Muted}" Margin="14,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Paso 2: previsualización -->
+                <Border x:Name="Step1" Style="{StaticResource Panel}" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock x:Name="TxtNoSample" Foreground="#FCD34D" TextWrapping="Wrap" Visibility="Collapsed"
+                                   Text="No hay empleados registrados todavía. Sube empleados en &quot;Subir empleados&quot; para poder previsualizar y generar las tarjetas." />
+                        <StackPanel x:Name="PreviewPanel">
+                            <TextBlock Style="{StaticResource SectionTitle}" Text="Tipo de código" />
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                                <RadioButton x:Name="RbQr" GroupName="Code" Style="{StaticResource CardRadio}" Margin="0,0,8,0" Checked="OnCodeChanged" IsChecked="True">
+                                    <TextBlock Text="Código QR" FontWeight="SemiBold" />
+                                </RadioButton>
+                                <RadioButton x:Name="RbBarcode" GroupName="Code" Style="{StaticResource CardRadio}" Margin="0" Checked="OnCodeChanged">
+                                    <TextBlock Text="Código de barras" FontWeight="SemiBold" />
+                                </RadioButton>
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource SectionTitle}" Text="Así se verá la tarjeta" />
+                            <TextBlock x:Name="TxtSample" Style="{StaticResource Muted}" Margin="0,0,0,10" />
+                            <Image x:Name="PreviewImage" MaxWidth="700" HorizontalAlignment="Left" Stretch="Uniform" />
+                            <TextBlock x:Name="TxtPreviewError" Foreground="{StaticResource BrushError}" TextWrapping="Wrap" Visibility="Collapsed" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Paso 3: formato -->
+                <Border x:Name="Step2" Style="{StaticResource Panel}" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="Formato de exportación" />
+                        <RadioButton x:Name="RbPng" GroupName="Format" Style="{StaticResource CardRadio}" IsChecked="True">
+                            <TextBlock Text="PNG (una imagen por empleado)" FontWeight="SemiBold" />
+                        </RadioButton>
+                        <RadioButton x:Name="RbPdf" GroupName="Format" Style="{StaticResource CardRadio}">
+                            <TextBlock Text="PDF (un documento por empleado)" FontWeight="SemiBold" />
+                        </RadioButton>
+                        <TextBlock x:Name="TxtCodeSummary" Style="{StaticResource Muted}" Margin="0,8,0,0" />
+                        <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,0"
+                                   Text="Al terminar se generarán las tarjetas de todos los empleados registrados y se guardará un archivo .zip. Con muchos empleados puede tardar unos segundos." />
+                        <TextBlock x:Name="TxtError" Foreground="{StaticResource BrushError}" TextWrapping="Wrap" Margin="0,12,0,0" Visibility="Collapsed" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Listo -->
+                <Border x:Name="StepDone" Style="{StaticResource Panel}" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock x:Name="TxtDone" Foreground="{StaticResource BrushSuccess}" FontSize="16" TextWrapping="Wrap" Margin="0,0,0,16" />
+                        <StackPanel Orientation="Horizontal">
+                            <Button Style="{StaticResource PrimaryButton}" Content="Mostrar en carpeta" Margin="0,0,10,0" Click="OnShowFile" />
+                            <Button Style="{StaticResource GhostButton}" Content="Generar de nuevo" Click="OnStartOver" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </ScrollViewer>
+
+        <Grid x:Name="NavBar" Grid.Row="3" Margin="0,14,0,0">
+            <Button x:Name="BtnPrev" Style="{StaticResource GhostButton}" Content="Anterior" HorizontalAlignment="Left" Click="OnPrev" />
+            <Button x:Name="BtnNext" Style="{StaticResource PrimaryButton}" Content="Siguiente" HorizontalAlignment="Right" IsDefault="True" Click="OnNext" />
+        </Grid>
+    </Grid>
+</UserControl>

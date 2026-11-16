@@ -1,0 +1,104 @@
+<UserControl x:Class="SIFFA.DesktopApp.Views.Pages.UploadPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,14">
+            <TextBlock Style="{StaticResource Heading}" Text="Subir empleados" />
+            <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,0"
+                       Text="Carga masiva de empleados desde Excel y asignación de los adicionales (boletos) que recibirá cada uno." />
+        </StackPanel>
+
+        <!-- Indicador de pasos -->
+        <StackPanel x:Name="Steps" Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,14" />
+
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <Grid>
+                <!-- Paso 1: archivo -->
+                <Border x:Name="Step0" Style="{StaticResource Panel}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="Sube un archivo Excel (.xlsx)" />
+                        <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,10"
+                                   Text="La primera hoja debe tener encabezados en el renglón 1 y estas columnas, en este orden:" />
+                        <DataGrid x:Name="SampleGrid" Margin="0,0,0,14" HeadersVisibility="Column" />
+                        <StackPanel Orientation="Horizontal">
+                            <Button x:Name="BtnFile" Style="{StaticResource PrimaryButton}" Content="Elegir archivo" Click="OnPickFile" />
+                            <TextBlock x:Name="TxtReading" Style="{StaticResource Muted}" Margin="14,0,0,0" VerticalAlignment="Center" Visibility="Collapsed" Text="Leyendo archivo…" />
+                        </StackPanel>
+                        <TextBlock x:Name="TxtReadResult" TextWrapping="Wrap" Margin="0,14,0,0" Visibility="Collapsed" />
+                        <TextBlock x:Name="TxtWarnings" Foreground="#FCD34D" TextWrapping="Wrap" Margin="0,8,0,0" FontSize="12" Visibility="Collapsed" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Paso 2: rubro -->
+                <Border x:Name="Step1" Style="{StaticResource Panel}" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="Datos encontrados en el archivo" />
+                        <TextBlock x:Name="LblAreas" Style="{StaticResource Muted}" Margin="0,0,0,6" />
+                        <WrapPanel x:Name="ChipsAreas" Margin="0,0,0,14" />
+                        <TextBlock x:Name="LblTypes" Style="{StaticResource Muted}" Margin="0,0,0,6" />
+                        <WrapPanel x:Name="ChipsTypes" Margin="0,0,0,18" />
+
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="¿Por qué rubro se asignarán los adicionales?" />
+                        <RadioButton x:Name="RbArea" GroupName="Mode" Style="{StaticResource CardRadio}" Checked="OnModeChanged">
+                            <TextBlock Text="Por área" FontWeight="SemiBold" />
+                        </RadioButton>
+                        <RadioButton x:Name="RbType" GroupName="Mode" Style="{StaticResource CardRadio}" Checked="OnModeChanged">
+                            <TextBlock Text="Por tipo de empleado" FontWeight="SemiBold" />
+                        </RadioButton>
+                    </StackPanel>
+                </Border>
+
+                <!-- Paso 3: cantidades -->
+                <Border x:Name="Step2" Style="{StaticResource Panel}" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock x:Name="TxtNoAddTypes" Foreground="#FCD34D" TextWrapping="Wrap" Visibility="Collapsed"
+                                   Text="No hay tipos de adicional en el catálogo. Agrega al menos uno en &quot;Elementos adicionales&quot; para poder asignar cantidades." />
+                        <TextBlock x:Name="LblQtyTitle" Style="{StaticResource SectionTitle}" />
+                        <TextBlock x:Name="LblQtyHelp" Style="{StaticResource Muted}" Margin="0,0,0,10"
+                                   Text="Indica cuántos adicionales recibe cada empleado del rubro. Usa 0 para ninguno." />
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                            <Grid x:Name="QtyGrid" />
+                        </ScrollViewer>
+                    </StackPanel>
+                </Border>
+
+                <!-- Paso 4: resumen -->
+                <Border x:Name="Step3" Style="{StaticResource Panel}" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="Resumen de la carga" />
+                        <UniformGrid Columns="3" Margin="0,0,0,10">
+                            <StackPanel><TextBlock Style="{StaticResource Muted}" FontSize="12" Text="Empleados leídos" /><TextBlock x:Name="SumEmployees" FontSize="26" FontWeight="SemiBold" Foreground="White" /></StackPanel>
+                            <StackPanel><TextBlock Style="{StaticResource Muted}" FontSize="12" Text="Asignación por" /><TextBlock x:Name="SumMode" FontSize="26" FontWeight="SemiBold" Foreground="White" /></StackPanel>
+                            <StackPanel><TextBlock Style="{StaticResource Muted}" FontSize="12" Text="Adicionales a entregar" /><TextBlock x:Name="SumAdds" FontSize="26" FontWeight="SemiBold" Foreground="{StaticResource BrushCyan}" /></StackPanel>
+                        </UniformGrid>
+                        <TextBlock x:Name="SumCreate" Style="{StaticResource Muted}" Margin="0,0,0,10" />
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                            <Grid x:Name="SummaryGrid" />
+                        </ScrollViewer>
+                        <TextBlock x:Name="TxtSaveError" Foreground="{StaticResource BrushError}" TextWrapping="Wrap" Margin="0,12,0,0" Visibility="Collapsed" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Listo -->
+                <Border x:Name="StepDone" Style="{StaticResource Panel}" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock x:Name="TxtDone" Foreground="{StaticResource BrushSuccess}" FontSize="16" TextWrapping="Wrap" Margin="0,0,0,16" />
+                        <Button Style="{StaticResource PrimaryButton}" Content="Cargar otro archivo" HorizontalAlignment="Left" Click="OnStartOver" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </ScrollViewer>
+
+        <Grid x:Name="NavBar" Grid.Row="3" Margin="0,14,0,0">
+            <Button x:Name="BtnPrev" Style="{StaticResource GhostButton}" Content="Anterior" HorizontalAlignment="Left" Click="OnPrev" />
+            <Button x:Name="BtnNext" Style="{StaticResource PrimaryButton}" Content="Siguiente" HorizontalAlignment="Right" IsDefault="True" Click="OnNext" />
+        </Grid>
+    </Grid>
+</UserControl>

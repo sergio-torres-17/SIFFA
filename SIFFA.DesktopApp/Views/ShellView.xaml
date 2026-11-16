@@ -1,27 +1,43 @@
 <Window x:Class="SIFFA.DesktopApp.Views.ShellView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="SIFFA" Width="1000" Height="640" MinWidth="720" MinHeight="480"
+        Title="SIFFA" Width="1180" Height="740" MinWidth="900" MinHeight="560"
         WindowStartupLocation="CenterScreen"
         Style="{StaticResource SiffaWindow}">
-    <DockPanel>
-        <Border DockPanel.Dock="Top" Background="{StaticResource BrushNavy}" Padding="24,14">
-            <DockPanel>
-                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
-                    <TextBlock Text="SIFFA" FontSize="22" FontWeight="Bold" Foreground="White" />
-                    <Ellipse Width="7" Height="7" Margin="3,12,0,0" Fill="{StaticResource BrushCyan}" />
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="248" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Menú lateral -->
+        <Border Grid.Column="0" Background="#0D1838" BorderBrush="{StaticResource BrushLine}" BorderThickness="0,0,1,0">
+            <DockPanel Margin="16,18,16,16">
+                <StackPanel DockPanel.Dock="Bottom">
+                    <Border Height="1" Background="{StaticResource BrushLine}" Margin="0,0,0,12" />
+                    <TextBlock x:Name="TxtUser" Foreground="White" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                    <TextBlock x:Name="TxtMode" Style="{StaticResource Muted}" FontSize="11" Margin="0,2,0,10" />
+                    <Button Style="{StaticResource GhostButton}" Content="Reconfigurar equipo" Padding="10,7" FontSize="12" Margin="0,0,0,6" Click="OnReconfigure" />
+                    <Button Style="{StaticResource GhostButton}" Content="Cerrar sesión" Padding="10,7" FontSize="12" Click="OnLogout" />
                 </StackPanel>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <TextBlock x:Name="TxtUser" Foreground="{StaticResource BrushLavender}" VerticalAlignment="Center" Margin="0,0,16,0" />
-                    <Button Style="{StaticResource GhostButton}" Content="Reconfigurar equipo" Margin="0,0,8,0" Click="OnReconfigure" />
-                    <Button Style="{StaticResource GhostButton}" Content="Cerrar sesión" Click="OnLogout" />
+
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="8,0,0,18">
+                        <TextBlock Text="SIFFA" FontSize="24" FontWeight="Bold" Foreground="White" />
+                        <Ellipse Width="7" Height="7" Margin="3,13,0,0" Fill="{StaticResource BrushCyan}" />
+                    </StackPanel>
+
+                    <RadioButton x:Name="NavHome" Tag="home" GroupName="Nav" Style="{StaticResource NavItem}" Content="Inicio" Checked="OnNav" />
+                    <RadioButton Tag="access" GroupName="Nav" Style="{StaticResource NavItem}" Content="Control de accesos" Checked="OnNav" />
+                    <RadioButton Tag="cards" GroupName="Nav" Style="{StaticResource NavItem}" Content="Ver invitaciones" Checked="OnNav" />
+                    <RadioButton Tag="upload" GroupName="Nav" Style="{StaticResource NavItem}" Content="Subir empleados" Checked="OnNav" />
+                    <RadioButton Tag="adds" GroupName="Nav" Style="{StaticResource NavItem}" Content="Elementos adicionales" Checked="OnNav" />
+                    <RadioButton Tag="users" GroupName="Nav" Style="{StaticResource NavItem}" Content="Usuarios de acceso" Checked="OnNav" />
                 </StackPanel>
             </DockPanel>
         </Border>
 
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-            <TextBlock x:Name="TxtWelcome" FontSize="28" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" />
-            <TextBlock x:Name="TxtMode" Style="{StaticResource Muted}" HorizontalAlignment="Center" Margin="0,8,0,0" />
-        </StackPanel>
-    </DockPanel>
+        <!-- Contenido -->
+        <ContentControl x:Name="Host" Grid.Column="1" Margin="32,26,32,22" Focusable="False" />
+    </Grid>
 </Window>
