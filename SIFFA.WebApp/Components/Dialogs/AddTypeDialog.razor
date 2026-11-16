@@ -1,0 +1,78 @@
+@using SIFFA.Core.Services.AddTypeService
+@inject IAddTypeService AddTypes
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(Item is null ? "Nuevo adicional" : "Editar adicional")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField T="string" @bind-Value="_name" Label="Nombre" Variant="Variant.Outlined" Class="mb-3"
+                      MaxLength="50" Counter="50" Immediate="true" AutoFocus="true" Disabled="@_saving"
+                      OnKeyDown="OnKeyDown" />
+        <MudTextField T="string" @bind-Value="_description" Label="Descripción (opcional)" Variant="Variant.Outlined"
+                      MaxLength="200" Counter="200" Lines="2" Immediate="true" Disabled="@_saving" />
+
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-3">@_error</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="@_saving">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save"
+                   Disabled="@(_saving || string.IsNullOrWhiteSpace(_name))">Guardar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    /// <summary>Adicional a editar; null para crear uno nuevo.</summary>
+    [Parameter] public AddTypeItem? Item { get; set; }
+
+    private string? _name;
+    private string? _description;
+    private string? _error;
+    private bool _saving;
+
+    protected override void OnInitialized()
+    {
+        _name = Item?.Name;
+        _description = Item?.Description;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_name))
+            await Save();
+    }
+
+    private async Task Save()
+    {
+        if (_saving) return;
+
+        _saving = true;
+        _error = null;
+        try
+        {
+            var result = Item is null
+                ? await AddTypes.CreateAsync(_name ?? string.Empty, _description)
+                : await AddTypes.UpdateAsync(Item.AddTypeId, _name ?? string.Empty, _description);
+
+            if (result.IsSuccess)
+                MudDialog.Close(DialogResult.Ok(result.Message));
+            else
+                _error = result.Message;
+        }
+        catch (Exception ex)
+        {
+            _error = $"No se pudo guardar: {ex.InnerException?.Message ?? ex.Message}";
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

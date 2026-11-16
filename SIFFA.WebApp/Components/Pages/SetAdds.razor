@@ -1,6 +1,130 @@
 ﻿@page "/SetAdds"
-<h3>SetAdds</h3>
+@using SIFFA.Core.Services.AddTypeService
+@using SIFFA.WebApp.Components.Dialogs
+@inject IAddTypeService AddTypes
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Adicionales · SIFFA</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+    <div>
+        <MudText Typo="Typo.h4">Elementos adicionales</MudText>
+        <MudText Typo="Typo.body2">Tipos de boleto o entrega que pueden recibir los empleados (agua, comida, bebida, premios…).</MudText>
+    </div>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+               OnClick="@(() => Edit(null))">Nuevo adicional</MudButton>
+</MudStack>
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert>
+}
+
+<MudPaper Class="pa-4" Outlined="true">
+    <MudTable Items="_items" Dense="true" Hover="true" Elevation="0" Loading="@_loading" Breakpoint="Breakpoint.None"
+              Filter="Match">
+        <ToolBarContent>
+            <MudSpacer />
+            <MudTextField T="string" @bind-Value="_search" Immediate="true" Placeholder="Buscar" Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search" Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Style="max-width:280px" />
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>Nombre</MudTh>
+            <MudTh>Descripción</MudTh>
+            <MudTh Style="text-align:right">Boletos asignados</MudTh>
+            <MudTh Style="text-align:right">Configuraciones</MudTh>
+            <MudTh Style="text-align:right">Acciones</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Name</MudTd>
+            <MudTd>@context.Description</MudTd>
+            <MudTd Style="text-align:right">@context.TicketsAssigned</MudTd>
+            <MudTd Style="text-align:right">@context.Configurations</MudTd>
+            <MudTd Style="text-align:right">
+                <MudTooltip Text="Editar">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => Edit(context))" />
+                </MudTooltip>
+                <MudTooltip Text="@(InUse(context) ? "En uso: no se puede eliminar" : "Eliminar")">
+                    <span>
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                                       Disabled="@InUse(context)" OnClick="@(() => Remove(context))" />
+                    </span>
+                </MudTooltip>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Typo="Typo.body2">No hay adicionales. Crea el primero con "Nuevo adicional".</MudText>
+        </NoRecordsContent>
+        <PagerContent>
+            <MudTablePager PageSizeOptions="new int[] { 10, 25, 50 }" InfoFormat="{first_item}-{last_item} de {all_items}"
+                           RowsPerPageString="Filas" />
+        </PagerContent>
+    </MudTable>
+    <MudText Typo="Typo.caption" Class="mt-2" Style="display:block">
+        Un adicional en uso (con boletos o configuraciones) no se puede eliminar, para no perder el historial de entregas.
+    </MudText>
+</MudPaper>
 
 @code {
+    private List<AddTypeItem> _items = new();
+    private string? _search;
+    private string? _error;
+    private bool _loading = true;
 
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        _loading = true;
+        try
+        {
+            _items = await AddTypes.GetAllAsync();
+            _error = null;
+        }
+        catch (Exception ex)
+        {
+            _error = $"No se pudieron cargar los adicionales: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private bool Match(AddTypeItem item) =>
+        string.IsNullOrWhiteSpace(_search)
+        || item.Name.Contains(_search, StringComparison.OrdinalIgnoreCase)
+        || (item.Description?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false);
+
+    private static bool InUse(AddTypeItem item) => item.TicketsAssigned > 0 || item.Configurations > 0;
+
+    private async Task Edit(AddTypeItem? item)
+    {
+        var dialog = await DialogService.ShowAsync<AddTypeDialog>(
+            item is null ? "Nuevo adicional" : "Editar adicional",
+            new DialogParameters<AddTypeDialog> { { x => x.Item, item } },
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is { Canceled: false, Data: string message })
+        {
+            Snackbar.Add(message, Severity.Success);
+            await Load();
+        }
+    }
+
+    private async Task Remove(AddTypeItem item)
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            "Eliminar adicional",
+            $"¿Eliminar \"{item.Name}\"? Esta acción no se puede deshacer.",
+            yesText: "Eliminar", cancelText: "Cancelar");
+        if (confirmed != true) return;
+
+        var result = await AddTypes.DeleteAsync(item.AddTypeId);
+        Snackbar.Add(result.Message, result.IsSuccess ? Severity.Success : Severity.Error);
+        if (result.IsSuccess)
+            await Load();
+    }
 }
