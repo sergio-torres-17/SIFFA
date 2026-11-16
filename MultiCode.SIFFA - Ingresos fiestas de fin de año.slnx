@@ -5,6 +5,9 @@
       <Deploy />
     </Project>
   </Folder>
+  <Folder Name="/Tools/">
+    <Project Path="SIFFA.AdminConsole/SIFFA.AdminConsole.csproj" />
+  </Folder>
   <Folder Name="/Desktop/">
     <Project Path="SIFFA.DesktopApp/SIFFA.DesktopApp.csproj" />
   </Folder>

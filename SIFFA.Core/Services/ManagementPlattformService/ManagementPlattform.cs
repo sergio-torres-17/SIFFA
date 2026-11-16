@@ -25,6 +25,14 @@ namespace SIFFA.Core.Services.ManagementPlattformService
         private IEncryptionService EncryptionService { get; set; }
         private IConfiguration Configuration { get; set; }
 
+        // El usuario administrador lo crea el script postdeployment (Security.Usp_Insert_Basics).
+        private const string AdminEmail = "adminsiffa@multicodedev.com";
+
+        public async Task<bool> IsSystemActivated()
+        {
+            return await Db.Credentials.AnyAsync(c => c.User.Email == AdminEmail);
+        }
+
         public async Task<GenericReponse> ActivateSystem(ActivateSystemRequest request)
         {
             // La clave de activación (SeedActivation) debe ser el Seed:AdminPassword del appsettings.
@@ -55,7 +63,7 @@ namespace SIFFA.Core.Services.ManagementPlattformService
             {
                 CredentialId = Guid.NewGuid(),
                 UserId = user.UserId,
-                UsernameHash = EncryptionService.HashPassword(user.Email),
+                UsernameHash = UsernameHasher.Hash(user.Email),
                 PasswordHash = EncryptionService.HashPassword(request.PasswordAdmin),
                 CreatedAt = DateTime.Now,
             });

@@ -1,0 +1,27 @@
+<Window x:Class="SIFFA.DesktopApp.Views.ShellView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="SIFFA" Width="1000" Height="640" MinWidth="720" MinHeight="480"
+        WindowStartupLocation="CenterScreen"
+        Style="{StaticResource SiffaWindow}">
+    <DockPanel>
+        <Border DockPanel.Dock="Top" Background="{StaticResource BrushNavy}" Padding="24,14">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                    <TextBlock Text="SIFFA" FontSize="22" FontWeight="Bold" Foreground="White" />
+                    <Ellipse Width="7" Height="7" Margin="3,12,0,0" Fill="{StaticResource BrushCyan}" />
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <TextBlock x:Name="TxtUser" Foreground="{StaticResource BrushLavender}" VerticalAlignment="Center" Margin="0,0,16,0" />
+                    <Button Style="{StaticResource GhostButton}" Content="Reconfigurar equipo" Margin="0,0,8,0" Click="OnReconfigure" />
+                    <Button Style="{StaticResource GhostButton}" Content="Cerrar sesión" Click="OnLogout" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            <TextBlock x:Name="TxtWelcome" FontSize="28" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Center" />
+            <TextBlock x:Name="TxtMode" Style="{StaticResource Muted}" HorizontalAlignment="Center" Margin="0,8,0,0" />
+        </StackPanel>
+    </DockPanel>
+</Window>

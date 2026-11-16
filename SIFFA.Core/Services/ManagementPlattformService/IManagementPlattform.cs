@@ -11,5 +11,8 @@ namespace SIFFA.Core.Services.ManagementPlattformService
     {
 
         public Task<GenericReponse> ActivateSystem(ActivateSystemRequest request);
+
+        /// <summary>Indica si el usuario administrador ya tiene credenciales (el sistema ya fue configurado).</summary>
+        public Task<bool> IsSystemActivated();
     }
 }

@@ -480,3 +480,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Velopack (SIFFA.DesktopApp/pack.ps1)
+SIFFA.DesktopApp/publish/
+SIFFA.DesktopApp/Releases/

@@ -1,0 +1,61 @@
+<Window x:Class="SIFFA.DesktopApp.Views.RoleSetupView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="SIFFA · Configuración del equipo" Width="600" SizeToContent="Height"
+        WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
+        Style="{StaticResource SiffaWindow}">
+    <StackPanel Margin="40,34,40,30">
+        <TextBlock Style="{StaticResource Heading}" Text="Configuración del equipo" />
+        <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,20"
+                   Text="Define cómo funcionará SIFFA en este equipo. Solo se hace una vez; después se puede cambiar desde el inicio de sesión." />
+
+        <TextBlock Style="{StaticResource FieldLabel}" Text="¿QUÉ ES ESTE EQUIPO?" Margin="2,0,0,8" />
+        <RadioButton x:Name="RbServer" GroupName="Role" Style="{StaticResource CardRadio}" Checked="OnChoiceChanged">
+            <StackPanel>
+                <TextBlock Text="Servidor" FontSize="16" FontWeight="SemiBold" />
+                <TextBlock Style="{StaticResource Muted}" Margin="0,2,0,0"
+                           Text="Tiene la base de datos principal del evento. Los demás equipos se conectan a este." />
+            </StackPanel>
+        </RadioButton>
+        <RadioButton x:Name="RbClient" GroupName="Role" Style="{StaticResource CardRadio}" Checked="OnChoiceChanged">
+            <StackPanel>
+                <TextBlock Text="Cliente" FontSize="16" FontWeight="SemiBold" />
+                <TextBlock Style="{StaticResource Muted}" Margin="0,2,0,0"
+                           Text="Se conecta a otro escritorio SIFFA o a la consola web." />
+            </StackPanel>
+        </RadioButton>
+
+        <StackPanel x:Name="ClientPanel" Visibility="Collapsed">
+            <TextBlock Style="{StaticResource FieldLabel}" Text="¿A QUÉ SE CONECTA?" Margin="2,14,0,8" />
+            <UniformGrid Columns="2">
+                <RadioButton x:Name="RbDesktop" GroupName="Target" Style="{StaticResource CardRadio}" Margin="0,0,6,8" Checked="OnChoiceChanged">
+                    <StackPanel>
+                        <TextBlock Text="Otro escritorio" FontWeight="SemiBold" />
+                        <TextBlock Style="{StaticResource Muted}" FontSize="12" Margin="0,2,0,0" Text="Usa el SQL Server de un equipo servidor." />
+                    </StackPanel>
+                </RadioButton>
+                <RadioButton x:Name="RbWeb" GroupName="Target" Style="{StaticResource CardRadio}" Margin="6,0,0,8" Checked="OnChoiceChanged">
+                    <StackPanel>
+                        <TextBlock Text="Consola web" FontWeight="SemiBold" />
+                        <TextBlock Style="{StaticResource Muted}" FontSize="12" Margin="0,2,0,0" Text="Valida el acceso contra la web SIFFA." />
+                    </StackPanel>
+                </RadioButton>
+            </UniformGrid>
+
+            <TextBlock x:Name="AddressLabel" Style="{StaticResource FieldLabel}" Text="DIRECCIÓN" />
+            <TextBox x:Name="TxtAddress" TextChanged="OnAddressChanged" />
+            <TextBlock x:Name="AddressHint" Style="{StaticResource Muted}" FontSize="12" Margin="2,6,0,0" />
+        </StackPanel>
+
+        <TextBlock x:Name="TxtStatus" TextWrapping="Wrap" Margin="2,14,0,0" Visibility="Collapsed" />
+
+        <Grid Margin="0,24,0,0">
+            <Button x:Name="BtnCancel" Style="{StaticResource GhostButton}" Content="Cancelar" HorizontalAlignment="Left" Click="OnCancel" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="BtnTest" Style="{StaticResource GhostButton}" Content="Probar conexión" Margin="0,0,10,0"
+                        Visibility="Collapsed" Click="OnTest" />
+                <Button x:Name="BtnNext" Style="{StaticResource PrimaryButton}" Content="Siguiente" IsDefault="True" Click="OnNext" />
+            </StackPanel>
+        </Grid>
+    </StackPanel>
+</Window>

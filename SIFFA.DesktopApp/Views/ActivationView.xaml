@@ -1,0 +1,31 @@
+<Window x:Class="SIFFA.DesktopApp.Views.ActivationView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="SIFFA · Activar el sistema" Width="520" SizeToContent="Height"
+        WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
+        Style="{StaticResource SiffaWindow}">
+    <StackPanel Margin="40,30,40,28">
+        <TextBlock Style="{StaticResource Heading}" Text="Activar el sistema" />
+        <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,14"
+                   Text="El usuario administrador todavía no tiene contraseña. Define una para poder iniciar sesión." />
+        <TextBlock Style="{StaticResource Muted}" FontSize="12" Margin="0,0,0,4"
+                   Text="Administrador: adminsiffa@multicodedev.com" />
+
+        <TextBlock Style="{StaticResource FieldLabel}" Text="CLAVE DE ACTIVACIÓN" />
+        <PasswordBox x:Name="TxtKey" PasswordChanged="OnChanged" />
+
+        <TextBlock Style="{StaticResource FieldLabel}" Text="CONTRASEÑA DEL ADMINISTRADOR" />
+        <PasswordBox x:Name="TxtPassword" PasswordChanged="OnChanged" />
+
+        <TextBlock Style="{StaticResource FieldLabel}" Text="CONFIRMAR CONTRASEÑA" />
+        <PasswordBox x:Name="TxtConfirm" PasswordChanged="OnChanged" />
+
+        <TextBlock x:Name="TxtStatus" TextWrapping="Wrap" Margin="2,14,0,0" Visibility="Collapsed" />
+
+        <Grid Margin="0,24,0,0">
+            <Button Style="{StaticResource GhostButton}" Content="Ahora no" HorizontalAlignment="Left" Click="OnSkip" />
+            <Button x:Name="BtnActivate" Style="{StaticResource PrimaryButton}" Content="Activar" HorizontalAlignment="Right"
+                    IsDefault="True" Click="OnActivate" />
+        </Grid>
+    </StackPanel>
+</Window>
