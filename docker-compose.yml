@@ -48,6 +48,8 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__DefaultConnection: "Server=db;Database=SIFFA;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;"
+      # Clave de activación del sistema (Seed:AdminPassword): protege la creación del administrador.
+      Seed__AdminPassword: ${SIFFA_ACTIVATION_KEY:?Define SIFFA_ACTIVATION_KEY en .env}
     ports:
       - "${WEB_PORT:-8080}:8080"
 
