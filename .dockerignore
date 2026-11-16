@@ -1,0 +1,9 @@
+**/bin/
+**/obj/
+**/.vs/
+.git/
+SIFFA.PhpApp/
+SIFFA.DesktopApp/
+SIFFA.AdminConsole/
+SIFFA.Database/
+dist/
