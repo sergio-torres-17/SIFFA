@@ -484,3 +484,11 @@ $RECYCLE.BIN/
 # Velopack (SIFFA.DesktopApp/pack.ps1)
 SIFFA.DesktopApp/publish/
 SIFFA.DesktopApp/Releases/
+
+# SIFFA.PhpApp
+SIFFA.PhpApp/.env
+SIFFA.PhpApp/storage/*
+!SIFFA.PhpApp/storage/.htaccess
+!SIFFA.PhpApp/storage/.gitkeep
+SIFFA.PhpApp/dist/
+SIFFA.PhpApp/vendor/

@@ -1,0 +1,26 @@
+{
+  "name": "multicode/siffa-php",
+  "description": "SIFFA - control de ingresos para fiestas de fin de año (versión PHP para hosting compartido)",
+  "type": "project",
+  "license": "proprietary",
+  "require": {
+    "php": ">=8.0",
+    "ext-pdo": "*",
+    "ext-pdo_mysql": "*",
+    "ext-gd": "*",
+    "ext-zip": "*",
+    "ext-mbstring": "*",
+    "shuchkin/simplexlsx": "^1.1",
+    "bacon/bacon-qr-code": "^2.0",
+    "picqer/php-barcode-generator": "^2.4",
+    "setasign/fpdf": "^1.8"
+  },
+  "autoload": {
+    "psr-4": { "Siffa\\": "app/" },
+    "files": ["app/helpers.php"]
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "platform": { "php": "8.0.30" }
+  }
+}

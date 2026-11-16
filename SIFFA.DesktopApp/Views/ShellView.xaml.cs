@@ -71,6 +71,19 @@ namespace SIFFA.DesktopApp.Views
             return panel;
         }
 
+        // Busca a un empleado y reimprime su invitación en la impresora térmica.
+        private void OnReprint(object sender, RoutedEventArgs e)
+        {
+            // Con consola web el equipo no tiene base de datos propia: la reimpresión se hace desde la web.
+            if (!_settings.UsesDatabase)
+            {
+                MessageBox.Show(this, "Este equipo usa la consola web y no tiene los empleados guardados aquí. La reimpresión de invitaciones se hace en un equipo con base de datos (servidor o cliente de escritorio).",
+                    "Reimprimir invitación", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            new ReprintInvitationView(App.Current.Services) { Owner = this }.ShowDialog();
+        }
+
         private void OnLogout(object sender, RoutedEventArgs e)
         {
             Outcome = ShellOutcome.Logout;

@@ -20,6 +20,9 @@ namespace SIFFA.Core.Services.EmployeeService
         /// </summary>
         public Task<GenericReponse> RegisterEmployeeImportAsync(EmployeeImportRequest request);
 
+        /// <summary>Datos de la invitación de un empleado por su número; null si no existe.</summary>
+        public Task<InvitationCardData?> GetCardAsync(string employeeNumber);
+
         /// <summary>Datos de un empleado registrado para usarlo de ejemplo en la previsualización; null si no hay empleados.</summary>
         public Task<InvitationCardData?> GetCardSampleAsync();
 

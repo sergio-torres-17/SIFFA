@@ -17,6 +17,7 @@
                     <Border Height="1" Background="{StaticResource BrushLine}" Margin="0,0,0,12" />
                     <TextBlock x:Name="TxtUser" Foreground="White" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                     <TextBlock x:Name="TxtMode" Style="{StaticResource Muted}" FontSize="11" Margin="0,2,0,10" />
+                    <Button Style="{StaticResource GhostButton}" Content="Reimprimir invitación" Padding="10,7" FontSize="12" Margin="0,0,0,6" Click="OnReprint" />
                     <Button Style="{StaticResource GhostButton}" Content="Reconfigurar equipo" Padding="10,7" FontSize="12" Margin="0,0,0,6" Click="OnReconfigure" />
                     <Button Style="{StaticResource GhostButton}" Content="Cerrar sesión" Padding="10,7" FontSize="12" Click="OnLogout" />
                 </StackPanel>

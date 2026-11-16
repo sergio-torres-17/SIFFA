@@ -72,9 +72,13 @@ namespace SIFFA.Core.Services.EmployeeService
 
         // ───────── Tarjetas de invitación ─────────
 
-        private async Task<List<InvitationCardData>> LoadCardsAsync()
+        private async Task<List<InvitationCardData>> LoadCardsAsync(string? employeeNumber = null)
         {
-            var employees = await Db.Employees.AsNoTracking()
+            var query = Db.Employees.AsNoTracking().AsQueryable();
+            if (employeeNumber is not null)
+                query = query.Where(e => e.InernalIdentifier == employeeNumber);
+
+            var employees = await query
                 .OrderBy(e => e.InernalIdentifier)
                 .Select(e => new
                 {
@@ -87,7 +91,9 @@ namespace SIFFA.Core.Services.EmployeeService
                 })
                 .ToListAsync();
 
+            var employeeIds = employees.Select(e => e.EmployeeId).ToList();
             var adds = (await Db.AddEmployees.AsNoTracking()
+                    .Where(a => employeeNumber == null || employeeIds.Contains(a.EmployeeId))
                     .GroupBy(a => new { a.EmployeeId, a.AddType.AddTypeName })
                     .Select(g => new { g.Key.EmployeeId, g.Key.AddTypeName, Quantity = g.Count() })
                     .ToListAsync())
@@ -104,6 +110,12 @@ namespace SIFFA.Core.Services.EmployeeService
                     .Select(a => new InvitationCardAdd(a.AddTypeName, a.Quantity))
                     .ToList(),
             }).ToList();
+        }
+
+        public async Task<InvitationCardData?> GetCardAsync(string employeeNumber)
+        {
+            var cards = await LoadCardsAsync(employeeNumber);
+            return cards.FirstOrDefault();
         }
 
         public async Task<InvitationCardData?> GetCardSampleAsync()

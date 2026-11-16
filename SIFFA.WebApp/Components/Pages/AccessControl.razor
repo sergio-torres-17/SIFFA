@@ -64,6 +64,7 @@
 
     private readonly List<Entry> _recent = new();
     private bool _active;
+    private bool _useCamera;
 
     // Modo continuo: al terminar cada empleado se vuelve a abrir el cuadro de captura,
     // para escanear al siguiente sin tocar el ratón. Se sale con "Cerrar".
@@ -79,7 +80,12 @@
             {
                 var scan = await DialogService.ShowAsync<AccessScanDialog>(
                     type == AccessType.Entry ? "Ingreso" : "Egreso",
-                    new DialogParameters<AccessScanDialog> { { x => x.AccessType, type } },
+                    new DialogParameters<AccessScanDialog>
+                    {
+                        { x => x.AccessType, type },
+                        { x => x.UseCamera, _useCamera },
+                        { x => x.UseCameraChanged, EventCallback.Factory.Create<bool>(this, v => _useCamera = v) },
+                    },
                     scanOptions);
                 var scanResult = await scan.Result;
                 if (scanResult is null || scanResult.Canceled || scanResult.Data is not AddTraceResponse response)

@@ -2,6 +2,8 @@
 @using SIFFA.Core.Models.Custom.Request.AccessControl
 @using SIFFA.Core.Services.AccessControlService
 @inject IAccessControlService AccessControl
+@inject IJSRuntime JS
+@implements IAsyncDisposable
 
 <MudDialog>
     <TitleContent>
@@ -16,6 +18,27 @@
                       Label="Código, nombre o correo" Variant="Variant.Outlined"
                       Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.QrCodeScanner"
                       OnKeyDown="OnKeyDown" />
+
+        <MudButton Variant="Variant.Text" Color="Color.Primary" Class="mt-2" OnClick="ToggleCamera"
+                   StartIcon="@(_camera ? Icons.Material.Filled.VideocamOff : Icons.Material.Filled.QrCodeScanner)">
+            @(_camera ? "Cerrar cámara" : "Escanear con la cámara")
+        </MudButton>
+
+        @* Foto con la cámara nativa del equipo: enfoca mejor que el video en vivo (útil en tabletas). *@
+        <label for="@_photoId" class="mud-button-root mud-button mud-button-text mud-button-text-primary mud-button-text-size-medium mud-ripple mt-2"
+               style="cursor:pointer">
+            <span class="mud-button-label">Leer desde una foto</span>
+        </label>
+        <input type="file" id="@_photoId" @ref="_photo" accept="image/*" capture="environment" style="display:none" />
+
+        <div style="@(_camera ? "position:relative;margin-top:8px;border-radius:12px;overflow:hidden;background:#0a1230" : "display:none")">
+            <video @ref="_video" playsinline muted style="display:block;width:100%;max-height:50vh;object-fit:cover"></video>
+            <div style="position:absolute;left:12%;right:12%;top:18%;bottom:18%;border:3px solid #22d3ee;border-radius:12px;box-shadow:0 0 0 999px rgba(10,18,48,.35);pointer-events:none"></div>
+        </div>
+        @if (_camera && _status is not null)
+        {
+            <MudText Typo="Typo.caption" Class="mt-1">@_status</MudText>
+        }
 
         @if (_busy)
         {
@@ -52,12 +75,89 @@
 
     [Parameter] public AccessType AccessType { get; set; }
 
+    // La cámara se recuerda entre empleados: el diálogo se vuelve a abrir tras cada registro.
+    [Parameter] public bool UseCamera { get; set; }
+    [Parameter] public EventCallback<bool> UseCameraChanged { get; set; }
+
     private string? _term;
     private string? _error;
     private bool _busy;
+    private bool _camera;
+    private readonly string _id = Guid.NewGuid().ToString("N");
+    private ElementReference _video;
+    private ElementReference _photo;
+    private readonly string _photoId = "photo-" + Guid.NewGuid().ToString("N");
+    private string? _status;
+    private DotNetObjectReference<AccessScanDialog>? _self;
     private List<EmployeeSearchResult> _matches = new();
 
     private void Cancel() => MudDialog.Cancel();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        _self ??= DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("siffaScan.bindPhoto", _photo, _self);
+        if (UseCamera)
+            await StartCamera();
+    }
+
+    [JSInvokable]
+    public async Task OnStatus(string text)
+    {
+        await InvokeAsync(() => { _status = text; StateHasChanged(); });
+    }
+
+    [JSInvokable]
+    public async Task OnPhotoFailed(string message)
+    {
+        await InvokeAsync(() => { _error = message; StateHasChanged(); });
+    }
+
+    private async Task ToggleCamera()
+    {
+        if (_camera)
+            await StopCamera();
+        else
+            await StartCamera();
+        await UseCameraChanged.InvokeAsync(_camera);
+    }
+
+    private async Task StartCamera()
+    {
+        _self ??= DotNetObjectReference.Create(this);
+        var error = await JS.InvokeAsync<string?>("siffaScan.start", _video, _self, _id);
+        _camera = error is null;
+        _error = error;
+        StateHasChanged();
+    }
+
+    private async Task StopCamera()
+    {
+        _camera = false;
+        try { await JS.InvokeVoidAsync("siffaScan.stop", _id); } catch (JSDisconnectedException) { }
+    }
+
+    [JSInvokable]
+    public async Task OnScanned(string code)
+    {
+        await InvokeAsync(async () =>
+        {
+            if (_busy) return;
+            _term = code;
+            await Submit();
+            StateHasChanged();
+        });
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try { await JS.InvokeVoidAsync("siffaScan.stop", _id); }
+        catch (JSDisconnectedException) { }
+        catch (InvalidOperationException) { }
+        _self?.Dispose();
+    }
 
     private async Task OnKeyDown(KeyboardEventArgs e)
     {
