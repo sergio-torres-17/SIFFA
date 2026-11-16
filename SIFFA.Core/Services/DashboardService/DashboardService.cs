@@ -15,11 +15,11 @@ namespace SIFFA.Core.Services.DashboardService
 
         // El catálogo AccessAction no tiene un código fijo, así que se reconoce por el nombre:
         // Entrada / Entry / Ingreso  y  Salida / Exit / Egreso.
-        private static bool IsEntryName(string name) =>
+        internal static bool IsEntryName(string name) =>
             name.Contains("entr", StringComparison.OrdinalIgnoreCase)
             || name.Contains("ingres", StringComparison.OrdinalIgnoreCase);
 
-        private static bool IsExitName(string name) =>
+        internal static bool IsExitName(string name) =>
             name.Contains("sal", StringComparison.OrdinalIgnoreCase)
             || name.Contains("exit", StringComparison.OrdinalIgnoreCase)
             || name.Contains("egres", StringComparison.OrdinalIgnoreCase);

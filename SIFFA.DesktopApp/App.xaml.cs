@@ -81,6 +81,7 @@ namespace SIFFA.DesktopApp
             services.AddScoped<IAddTypeService, AddTypeService>();
             services.AddScoped<IAccessControlService, AccessControlService>();
             services.AddScoped<IDashboardService, DashboardService>();
+            services.AddScoped<SIFFA.Core.Services.AttendanceService.IAttendanceService, SIFFA.Core.Services.AttendanceService.AttendanceService>();
             services.AddSingleton<AppUpdater>();
 
             //Configure windows

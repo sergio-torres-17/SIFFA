@@ -7,3 +7,4 @@ SIFFA.DesktopApp/
 SIFFA.AdminConsole/
 SIFFA.Database/
 dist/
+**/appsettings.Development.json

@@ -6,7 +6,7 @@ COPY SIFFA.WebApp/SIFFA.WebApp.csproj SIFFA.WebApp/
 RUN dotnet restore SIFFA.WebApp/SIFFA.WebApp.csproj
 COPY SIFFA.Core/ SIFFA.Core/
 COPY SIFFA.WebApp/ SIFFA.WebApp/
-RUN dotnet publish SIFFA.WebApp/SIFFA.WebApp.csproj -c Release -o /app --no-restore
+RUN dotnet publish SIFFA.WebApp/SIFFA.WebApp.csproj -c Release -o /app
 
 FROM mcr.microsoft.com/dotnet/aspnet:11.0 AS final
 # SkiaSharp (dibujo de las invitaciones) necesita fontconfig y una fuente.

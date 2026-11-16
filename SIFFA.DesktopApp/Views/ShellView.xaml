@@ -31,6 +31,7 @@
                     <RadioButton x:Name="NavHome" Tag="home" GroupName="Nav" Style="{StaticResource NavItem}" Content="Inicio" Checked="OnNav" />
                     <RadioButton Tag="access" GroupName="Nav" Style="{StaticResource NavItem}" Content="Control de accesos" Checked="OnNav" />
                     <RadioButton Tag="cards" GroupName="Nav" Style="{StaticResource NavItem}" Content="Ver invitaciones" Checked="OnNav" />
+                    <RadioButton Tag="attendance" GroupName="Nav" Style="{StaticResource NavItem}" Content="Reporte de asistencia" Checked="OnNav" />
                     <RadioButton Tag="upload" GroupName="Nav" Style="{StaticResource NavItem}" Content="Subir empleados" Checked="OnNav" />
                     <RadioButton Tag="adds" GroupName="Nav" Style="{StaticResource NavItem}" Content="Elementos adicionales" Checked="OnNav" />
                     <RadioButton Tag="users" GroupName="Nav" Style="{StaticResource NavItem}" Content="Usuarios de acceso" Checked="OnNav" />

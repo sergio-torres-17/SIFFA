@@ -45,6 +45,7 @@ namespace SIFFA.DesktopApp.Views
                 "home" => new HomePage(services),
                 "access" => new AccessPage(services),
                 "cards" => new CardsPage(services),
+                "attendance" => new AttendancePage(services),
                 "upload" => new UploadPage(services),
                 "adds" => new AddsPage(services),
                 "users" => new UsersPage(services, _session.UserId),

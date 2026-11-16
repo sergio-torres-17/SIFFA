@@ -17,6 +17,8 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="MudBlazor" Version="9.13.0" />
+    <!-- SkiaSharp en Linux (Docker): dibuja las invitaciones y decodifica el logo. -->
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.156.1" />
   </ItemGroup>
 
   <ItemGroup>

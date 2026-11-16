@@ -32,6 +32,7 @@ builder.Services.AddScoped<SIFFA.Core.Services.UserAccountService.IUserAccountSe
 builder.Services.AddScoped<SIFFA.Core.Services.AddTypeService.IAddTypeService, SIFFA.Core.Services.AddTypeService.AddTypeService>();
 builder.Services.AddScoped<SIFFA.Core.Services.AccessControlService.IAccessControlService, SIFFA.Core.Services.AccessControlService.AccessControlService>();
 builder.Services.AddScoped<SIFFA.Core.Services.DashboardService.IDashboardService, SIFFA.Core.Services.DashboardService.DashboardService>();
+builder.Services.AddScoped<SIFFA.Core.Services.AttendanceService.IAttendanceService, SIFFA.Core.Services.AttendanceService.AttendanceService>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -48,7 +49,11 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 // Todo requiere sesión, salvo lo marcado con [AllowAnonymous] (p. ej. /login).
 builder.Services.AddAuthorizationBuilder()
     .SetFallbackPolicy(new AuthorizationPolicyBuilder()
-        .RequireAuthenticatedUser()
+        // /_framework/blazor.web.js es un script público; si exige sesión, la página de login lo
+        // recibe como HTML y Blazor nunca arranca (ningún botón responde).
+        .RequireAssertion(ctx =>
+            ctx.User.Identity?.IsAuthenticated == true
+            || (ctx.Resource is HttpContext http && http.Request.Path.StartsWithSegments("/_framework")))
         .Build());
 builder.Services.AddCascadingAuthenticationState();
 
