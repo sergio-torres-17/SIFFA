@@ -21,9 +21,28 @@ namespace SIFFA.Core.Services.AccessControlService
             string movementType;
             Employee? employee;
             AccessAction? accessAction;
+            AccessType againstAccessType;
 
             // Nombre de la acción en el catálogo [Catalog].[AccessAction]
             movementType = request.AccessType == AccessType.Entry ? "Ingreso" : "Salida";
+
+
+            //If the access type is exit, check if the employee has an entry trace registered
+            if (request.AccessType == AccessType.Exit)
+            {
+                // Check if the employee has an entry trace registered
+                var identifierMaster = request.IdentifierNumber?.Trim();
+                var income = (from tr in Db.Traces
+                              join at in Db.AccessActions on tr.AccessActionId equals at.AccessActionId
+                              where tr.Employee.InernalIdentifier == identifierMaster && at.AccessActionName == "Ingreso"
+                              select tr)
+                              .ToList()
+                              .FirstOrDefault();
+
+                if (income is null)
+                    return new AddTraceResponse(false, "El empleado no tiene un registro de ingreso", null);
+            }
+
 
             var identifier = request.IdentifierNumber?.Trim();
             if (string.IsNullOrEmpty(identifier))

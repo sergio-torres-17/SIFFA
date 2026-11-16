@@ -34,6 +34,19 @@ final class Access
             return self::response(false, "Falta la acción {$movement} en el catálogo de acciones de acceso");
         }
 
+        // Para registrar un egreso el empleado debe tener un ingreso.
+        if ($type !== 'entry') {
+            $entries = Db::value(
+                'SELECT COUNT(*) FROM traces t JOIN access_actions a ON a.access_action_id = t.access_action_id
+                  WHERE t.employee_id = ? AND a.name = ?',
+                [$employee['employee_id'], 'Ingreso']
+            );
+            if ((int)$entries === 0) {
+                return self::response(false, 'El empleado no tiene un registro de ingreso', null,
+                    $employee['internal_identifier'], $fullName);
+            }
+        }
+
         $already = Db::value('SELECT COUNT(*) FROM traces WHERE employee_id = ? AND access_action_id = ?',
             [$employee['employee_id'], $action['access_action_id']]);
         if ((int)$already > 0) {

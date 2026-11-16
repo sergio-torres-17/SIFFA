@@ -61,8 +61,8 @@ namespace SIFFA.DesktopApp.Views
 
                 if (found.Count == 0)
                 {
+                    Reset(); // primero se limpia: vaciar la caja dispara OnTextChanged, que oculta el mensaje
                     ShowStatus("No se encontró ningún empleado con ese dato.", ok: false);
-                    Reset();
                 }
                 else if (found.Count == 1)
                 {
@@ -104,9 +104,9 @@ namespace SIFFA.DesktopApp.Views
             }
 
             // Falló (por ejemplo, movimiento repetido): se avisa y se deja listo para el siguiente código.
-            ShowStatus(response.message, ok: false);
             MatchesPanel.Visibility = Visibility.Collapsed;
-            Reset();
+            Reset(); // primero se limpia: vaciar la caja dispara OnTextChanged, que oculta el mensaje
+            ShowStatus(response.message, ok: false);
         }
 
         private void Reset()
