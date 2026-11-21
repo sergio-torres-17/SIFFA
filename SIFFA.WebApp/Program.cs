@@ -34,7 +34,9 @@ builder.Services.AddScoped<SIFFA.Core.Services.AccessControlService.IAccessContr
 builder.Services.AddScoped<SIFFA.Core.Services.DashboardService.IDashboardService, SIFFA.Core.Services.DashboardService.DashboardService>();
 builder.Services.AddScoped<SIFFA.Core.Services.AttendanceService.IAttendanceService, SIFFA.Core.Services.AttendanceService.AttendanceService>();
 
+builder.Services.AddSingleton<SIFFA.WebApp.Security.DesktopTokenService>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, SIFFA.WebApp.Security.DesktopTokenHandler>(SIFFA.WebApp.Security.DesktopTokenService.Scheme, null)
     .AddCookie(options =>
     {
         options.LoginPath = "/login";
@@ -66,7 +68,9 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+// La API responde con su código (401, 404…) tal cual; solo las páginas se re-ejecutan en /not-found.
+app.UseWhen(ctx => !ctx.Request.Path.StartsWithSegments("/api"),
+    branch => branch.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true));
 app.UseHttpsRedirection();
 
 app.UseAuthentication();

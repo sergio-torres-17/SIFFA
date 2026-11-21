@@ -126,7 +126,7 @@ else
                 @if (_generating)
                 {
                     <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                    <span>Generando…</span>
+                    <span>@(_progress ?? "Generando…")</span>
                 }
                 else
                 {
@@ -167,6 +167,7 @@ else
         RenderPreview(); // la muestra ya está cargada: solo se vuelve a dibujar
     }
     private bool _generating;
+    private string? _progress;
     private string? _error;
     private string? _done;
 
@@ -244,23 +245,49 @@ else
         if (_logo is null) return;
 
         _generating = true;
+        _progress = null;
         _error = null;
         try
         {
-            var result = await EmployeeService.GenerateCardsZipAsync(_logo, _format, _codeType);
-            if (!result.IsSuccess || result.File is null)
+            // El zip se arma por lotes directo a un archivo temporal (no en memoria) y de ahí se descarga.
+            var tempPath = Path.Combine(Path.GetTempPath(), $"siffa-tarjetas-{Guid.NewGuid():N}.zip");
+            try
             {
-                _error = result.Message;
-                return;
+                CardsZipResult result;
+                await using (var file = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true))
+                {
+                    var last = 0;
+                    var progress = new Progress<CardsProgress>(p =>
+                    {
+                        // Se refresca la pantalla cada ~5% para no saturar la conexión.
+                        if (p.Done == p.Total || p.Done - last >= Math.Max(1, p.Total / 20))
+                        {
+                            last = p.Done;
+                            _progress = $"Generando… {p.Done} de {p.Total}";
+                            _ = InvokeAsync(StateHasChanged);
+                        }
+                    });
+                    result = await EmployeeService.GenerateCardsZipAsync(_logo, _format, _codeType, file, progress);
+                }
+
+                if (!result.IsSuccess)
+                {
+                    _error = result.Message;
+                    return;
+                }
+
+                await using var stream = new FileStream(tempPath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true);
+                using var reference = new DotNetStreamReference(stream);
+                var module = await JS.InvokeAsync<IJSObjectReference>("import", "/js/download.js");
+                await module.InvokeVoidAsync("downloadFromStream", result.FileName, reference);
+
+                _done = $"{result.Message} La descarga de {result.FileName} comenzó.";
+                Snackbar.Add("Tarjetas generadas.", Severity.Success);
             }
-
-            await using var stream = new MemoryStream(result.File);
-            using var reference = new DotNetStreamReference(stream);
-            var module = await JS.InvokeAsync<IJSObjectReference>("import", "/js/download.js");
-            await module.InvokeVoidAsync("downloadFromStream", result.FileName, reference);
-
-            _done = $"{result.Message} La descarga de {result.FileName} comenzó.";
-            Snackbar.Add("Tarjetas generadas.", Severity.Success);
+            finally
+            {
+                try { File.Delete(tempPath); } catch { /* el sistema limpia la carpeta temporal */ }
+            }
         }
         catch (Exception ex)
         {

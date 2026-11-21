@@ -8,7 +8,7 @@
   Requisitos: dotnet tool install -g vpk   (usa la misma versión que el paquete NuGet Velopack del proyecto)
 
   Para publicar la actualización en GitHub Releases (la fuente configurada en appsettings.json):
-    vpk upload github --repoUrl https://github.com/sergio-torres-17/SIFFA --publish --releaseName "SIFFA <versión>" --tag v<versión> --outputDir <Output> --token <TOKEN>
+    vpk upload github --repoUrl https://github.com/sergio-torres-17/SIFFA-Releases --publish --releaseName "SIFFA <versión>" --tag v<versión> --outputDir <Output> --token <TOKEN>
 #>
 param(
     [Parameter(Mandatory = $true)][string]$Version,

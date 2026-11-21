@@ -112,6 +112,8 @@ namespace SIFFA.Core.Services.EmployeeService
             }).ToList();
         }
 
+        public Task<List<InvitationCardData>> GetAllCardsAsync() => LoadCardsAsync();
+
         public async Task<InvitationCardData?> GetCardAsync(string employeeNumber)
         {
             var cards = await LoadCardsAsync(employeeNumber);
@@ -131,69 +133,10 @@ namespace SIFFA.Core.Services.EmployeeService
             return bitmap is null ? null : InvitationCardRenderer.RenderPng(card, bitmap, code);
         }
 
-        public async Task<CardsZipResult> GenerateCardsZipAsync(byte[] logo, CardFormat format, CardCodeType code = CardCodeType.Qr)
-        {
-            using var bitmap = InvitationCardRenderer.DecodeLogo(logo);
-            if (bitmap is null)
-                return new CardsZipResult(false, "El logo no es una imagen válida.");
+        public async Task<CardsZipResult> GenerateCardsZipAsync(byte[] logo, CardFormat format, CardCodeType code,
+            Stream output, IProgress<CardsProgress>? progress = null, CancellationToken cancellationToken = default) =>
+            await CardsZipWriter.WriteAsync(await LoadCardsAsync(), logo, format, code, output, progress, cancellationToken);
 
-            var cards = await LoadCardsAsync();
-            if (cards.Count == 0)
-                return new CardsZipResult(false, "No hay empleados registrados para generar tarjetas.");
-
-            var extension = format == CardFormat.Pdf ? "pdf" : "png";
-
-            // El dibujo es trabajo de CPU: se hace fuera del hilo de la conexión.
-            return await Task.Run(() =>
-            {
-                try
-                {
-                    // Dibujo en paralelo (cada tarjeta usa su propio lienzo); el logo es de solo lectura.
-                    var files = new byte[cards.Count][];
-                    Parallel.For(0, cards.Count, i =>
-                    {
-                        files[i] = format == CardFormat.Pdf
-                            ? InvitationCardRenderer.RenderPdf(cards[i], bitmap, code)
-                            : InvitationCardRenderer.RenderPng(cards[i], bitmap, code);
-                    });
-
-                    using var zipStream = new MemoryStream();
-                    using (var zip = new System.IO.Compression.ZipArchive(zipStream, System.IO.Compression.ZipArchiveMode.Create, true))
-                    {
-                        var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                        for (var i = 0; i < cards.Count; i++)
-                        {
-                            var card = cards[i];
-                            var file = files[i];
-
-                            var name = SafeFileName($"{card.EmployeeNumber}_{card.FullName}");
-                            var unique = name;
-                            for (var n = 2; !usedNames.Add(unique); n++)
-                                unique = $"{name}_{n}";
-
-                            // PNG y PDF ya vienen comprimidos: no se recomprime para ir más rápido.
-                            var entry = zip.CreateEntry($"{unique}.{extension}", System.IO.Compression.CompressionLevel.NoCompression);
-                            using var entryStream = entry.Open();
-                            entryStream.Write(file, 0, file.Length);
-                        }
-                    }
-
-                    return new CardsZipResult(true, $"Se generaron {cards.Count} tarjetas.", zipStream.ToArray(),
-                        $"tarjetas_invitacion_{extension}.zip", cards.Count);
-                }
-                catch (Exception ex)
-                {
-                    return new CardsZipResult(false, $"Error al generar las tarjetas: {ex.Message}");
-                }
-            });
-        }
-
-        private static string SafeFileName(string name)
-        {
-            var invalid = Path.GetInvalidFileNameChars();
-            var clean = new string(name.Select(c => invalid.Contains(c) ? '_' : c).ToArray()).Trim();
-            return clean.Length == 0 ? "tarjeta" : clean;
-        }
 
         public async Task<List<AddType>> GetAddTypesAsync() =>
             await Db.AddTypes.AsNoTracking().OrderBy(a => a.AddTypeName).ToListAsync();

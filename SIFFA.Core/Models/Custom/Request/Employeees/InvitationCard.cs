@@ -26,4 +26,7 @@ namespace SIFFA.Core.Models.Custom.Request.Employeees
     public record InvitationCardAdd(string Name, int Quantity);
 
     public record CardsZipResult(bool IsSuccess, string Message, byte[]? File = null, string FileName = "", int Count = 0);
+
+    /// <summary>Avance de la generación de tarjetas: <paramref name="Done"/> de <paramref name="Total"/>.</summary>
+    public record CardsProgress(int Done, int Total);
 }

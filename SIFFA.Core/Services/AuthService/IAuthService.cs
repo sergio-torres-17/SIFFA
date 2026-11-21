@@ -1,7 +1,7 @@
 namespace SIFFA.Core.Services.AuthService
 {
     /// <summary>Resultado de validar un usuario y contraseña contra [Security].[Credential].</summary>
-    public record AuthResult(bool IsSuccess, string Message, string? UserName = null, string? Email = null, Guid? UserId = null);
+    public record AuthResult(bool IsSuccess, string Message, string? UserName = null, string? Email = null, Guid? UserId = null, string? Token = null);
 
     public interface IAuthService
     {

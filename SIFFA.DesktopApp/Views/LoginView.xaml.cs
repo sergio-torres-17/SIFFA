@@ -45,7 +45,7 @@ namespace SIFFA.DesktopApp.Views
                 return;
             }
 
-            _sessions.Save(result.UserId, result.UserName ?? TxtUser.Text.Trim(), result.Email ?? TxtUser.Text.Trim());
+            _sessions.Save(result.UserId, result.UserName ?? TxtUser.Text.Trim(), result.Email ?? TxtUser.Text.Trim(), result.Token);
             Outcome = LoginOutcome.SignedIn;
             DialogResult = true;
         }

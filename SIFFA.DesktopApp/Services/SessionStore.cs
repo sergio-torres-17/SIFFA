@@ -11,6 +11,18 @@ namespace SIFFA.DesktopApp.Services
         public string Email { get; set; } = string.Empty;
         public DateTime SignedInAt { get; set; }
         public DateTime ExpiresAt { get; set; }
+
+        /// <summary>Token de la consola web (solo en modo cliente de consola web), cifrado con DPAPI.</summary>
+        public string? TokenProtected { get; set; }
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        public string? Token
+        {
+            get => string.IsNullOrEmpty(TokenProtected) ? null
+                : System.Text.Encoding.UTF8.GetString(System.Security.Cryptography.ProtectedData.Unprotect(Convert.FromBase64String(TokenProtected), null, System.Security.Cryptography.DataProtectionScope.CurrentUser));
+            set => TokenProtected = string.IsNullOrEmpty(value) ? null
+                : Convert.ToBase64String(System.Security.Cryptography.ProtectedData.Protect(System.Text.Encoding.UTF8.GetBytes(value), null, System.Security.Cryptography.DataProtectionScope.CurrentUser));
+        }
     }
 
     public class SessionStore
@@ -37,7 +49,7 @@ namespace SIFFA.DesktopApp.Services
             }
         }
 
-        public UserSession Save(Guid? userId, string name, string email)
+        public UserSession Save(Guid? userId, string name, string email, string? token = null)
         {
             var session = new UserSession
             {
@@ -46,6 +58,7 @@ namespace SIFFA.DesktopApp.Services
                 Email = email,
                 SignedInAt = DateTime.Now,
                 ExpiresAt = DateTime.Now + Lifetime,
+                Token = token,
             };
 
             Directory.CreateDirectory(MachineSettingsStore.Folder);

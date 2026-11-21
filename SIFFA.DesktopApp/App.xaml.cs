@@ -57,6 +57,18 @@ namespace SIFFA.DesktopApp
                 .Build();
         }
 
+        // Con SQL Server (servidor o cliente de otro escritorio) se usa el servicio del Core; como cliente de consola web,
+        // el que llama a su API. Se decide en cada resolución, así que reconfigurar el equipo no exige reiniciar.
+        private static void AddByMode<TService, TDatabase, TWeb>(IServiceCollection services)
+            where TService : class
+            where TDatabase : class, TService
+            where TWeb : class, TService
+        {
+            services.AddScoped<TService>(sp => sp.GetRequiredService<MachineSettingsStore>().Load().UsesWebApi
+                ? ActivatorUtilities.CreateInstance<TWeb>(sp)
+                : ActivatorUtilities.CreateInstance<TDatabase>(sp));
+        }
+
         private void ConfigureServices(IServiceCollection services)
         {
             //Configuration (la necesitan, por ejemplo, ManagementPlattform y AppUpdater)
@@ -74,14 +86,15 @@ namespace SIFFA.DesktopApp
 
             //Configure services
             services.AddScoped<IAuthService, AuthService>();
-            services.AddScoped<IUserAccountService, UserAccountService>();
+            AddByMode<IUserAccountService, UserAccountService, SIFFA.DesktopApp.Services.Web.WebUserAccountService>(services);
             services.AddSingleton<IEncryptionService, EncryptionService>();
-            services.AddScoped<IEmployeeService, EmployeeService>();
+            services.AddSingleton<SIFFA.DesktopApp.Services.Web.WebApi>();
+            AddByMode<IEmployeeService, EmployeeService, SIFFA.DesktopApp.Services.Web.WebEmployeeService>(services);
             services.AddScoped<IManagementPlattform, ManagementPlattform>();
-            services.AddScoped<IAddTypeService, AddTypeService>();
-            services.AddScoped<IAccessControlService, AccessControlService>();
-            services.AddScoped<IDashboardService, DashboardService>();
-            services.AddScoped<SIFFA.Core.Services.AttendanceService.IAttendanceService, SIFFA.Core.Services.AttendanceService.AttendanceService>();
+            AddByMode<IAddTypeService, AddTypeService, SIFFA.DesktopApp.Services.Web.WebAddTypeService>(services);
+            AddByMode<IAccessControlService, AccessControlService, SIFFA.DesktopApp.Services.Web.WebAccessControlService>(services);
+            AddByMode<IDashboardService, DashboardService, SIFFA.DesktopApp.Services.Web.WebDashboardService>(services);
+            AddByMode<SIFFA.Core.Services.AttendanceService.IAttendanceService, SIFFA.Core.Services.AttendanceService.AttendanceService, SIFFA.DesktopApp.Services.Web.WebAttendanceService>(services);
             services.AddSingleton<AppUpdater>();
 
             //Configure windows

@@ -33,7 +33,7 @@ namespace SIFFA.DesktopApp.Views
             var tag = (string)((RadioButton)sender).Tag;
 
             // Con consola web el equipo no tiene base de datos propia: las secciones se usan desde la web.
-            if (!_settings.UsesDatabase)
+            if (!_settings.UsesDatabase && !_settings.UsesWebApi)
             {
                 Host.Content = BuildWebOnlyNotice();
                 return;
@@ -76,7 +76,7 @@ namespace SIFFA.DesktopApp.Views
         private void OnReprint(object sender, RoutedEventArgs e)
         {
             // Con consola web el equipo no tiene base de datos propia: la reimpresión se hace desde la web.
-            if (!_settings.UsesDatabase)
+            if (!_settings.UsesDatabase && !_settings.UsesWebApi)
             {
                 MessageBox.Show(this, "Este equipo usa la consola web y no tiene los empleados guardados aquí. La reimpresión de invitaciones se hace en un equipo con base de datos (servidor o cliente de escritorio).",
                     "Reimprimir invitación", MessageBoxButton.OK, MessageBoxImage.Information);

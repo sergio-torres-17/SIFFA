@@ -57,6 +57,10 @@ namespace SIFFA.DesktopApp.Services
         [JsonIgnore]
         public bool UsesDatabase => Role == MachineRole.Server || (Role == MachineRole.Client && ClientTarget == Services.ClientTarget.Desktop);
 
+        /// <summary>Este equipo trabaja contra la API de la consola web (cliente de consola web).</summary>
+        [JsonIgnore]
+        public bool UsesWebApi => Role == MachineRole.Client && ClientTarget == Services.ClientTarget.WebConsole;
+
         /// <summary>¿Ya se terminó de configurar este equipo?</summary>
         [JsonIgnore]
         public bool IsConfigured => Role switch

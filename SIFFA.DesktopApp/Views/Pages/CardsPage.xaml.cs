@@ -252,23 +252,29 @@ namespace SIFFA.DesktopApp.Views.Pages
             try
             {
                 using var scope = _services.CreateScope();
-                var result = await scope.ServiceProvider.GetRequiredService<IEmployeeService>()
-                    .GenerateCardsZipAsync(_logo, Format, CodeType);
+                var progress = new Progress<CardsProgress>(p => BtnNext.Content = $"Generando… {p.Done} de {p.Total}");
 
-                if (!result.IsSuccess || result.File is null)
+                // El zip se escribe directo al archivo, por lotes: no se junta todo en memoria.
+                CardsZipResult result;
+                await using (var file = new FileStream(save.FileName, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true))
+                    result = await scope.ServiceProvider.GetRequiredService<IEmployeeService>()
+                        .GenerateCardsZipAsync(_logo, Format, CodeType, file, progress);
+
+                if (!result.IsSuccess)
                 {
+                    TryDelete(save.FileName);
                     TxtError.Text = result.Message;
                     TxtError.Visibility = Visibility.Visible;
                     return;
                 }
 
-                await File.WriteAllBytesAsync(save.FileName, result.File);
                 _savedPath = save.FileName;
                 TxtDone.Text = $"{result.Message} Se guardó {Path.GetFileName(save.FileName)}.";
                 _finished = true;
             }
             catch (Exception ex)
             {
+                TryDelete(save.FileName);
                 TxtError.Text = $"No se pudo generar o guardar: {ex.GetBaseException().Message}";
                 TxtError.Visibility = Visibility.Visible;
             }
@@ -277,6 +283,11 @@ namespace SIFFA.DesktopApp.Views.Pages
                 _busy = false;
                 Refresh();
             }
+        }
+
+        private static void TryDelete(string path)
+        {
+            try { File.Delete(path); } catch { /* si no se puede borrar, se deja */ }
         }
 
         private void OnShowFile(object sender, RoutedEventArgs e)
