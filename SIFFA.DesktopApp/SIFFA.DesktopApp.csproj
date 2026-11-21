@@ -11,6 +11,8 @@
     <!-- Versión de la app; vpk pack recibe la misma con -v al empaquetar. -->
     <Version>1.0.0</Version>
     <AssemblyName>SIFFA.DesktopApp</AssemblyName>
+    <!-- Icono del .exe, del acceso directo y de la barra de tareas. -->
+    <ApplicationIcon>Assets/SIFFA.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,7 +32,19 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="appsettings.local.json" Condition="Exists('appsettings.local.json')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="ViewModels\" />
+    <Resource Include="Assets/SIFFA.ico" />
+    <Resource Include="Assets/logo.png" />
+    <!-- Scripts de la base de datos (los mismos de SIFFA.Database) para el botón "Montar base de datos". -->
+    <EmbeddedResource Include="..\SIFFA.Database\**\*.sql"
+                      Exclude="..\SIFFA.Database\bin\**;..\SIFFA.Database\obj\**;..\SIFFA.Database\Security\Scripts\**"
+                      LogicalName="Db/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

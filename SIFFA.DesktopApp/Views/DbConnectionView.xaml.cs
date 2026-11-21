@@ -26,6 +26,9 @@ namespace SIFFA.DesktopApp.Views
             TxtUser.Text = settings.DbUser ?? "";
             TxtPassword.Password = settings.DbPassword ?? "";
             ChkTrust.IsChecked = settings.DbTrustCertificate;
+            // Automontar solo tiene sentido en el equipo servidor (el cliente se conecta a una base ya montada).
+            ChkAutoMount.Visibility = settings.Role == MachineRole.Server ? Visibility.Visible : Visibility.Collapsed;
+            ChkAutoMount.IsChecked = settings.DbAutoMount;
             ApplyAuthMode();
             _tested = false;
         }
@@ -72,6 +75,7 @@ namespace SIFFA.DesktopApp.Views
             Settings.DbUser = Settings.DbWindowsAuth ? null : TxtUser.Text.Trim();
             Settings.DbPassword = Settings.DbWindowsAuth ? null : TxtPassword.Password;
             Settings.DbTrustCertificate = ChkTrust.IsChecked == true;
+            Settings.DbAutoMount = Settings.Role == MachineRole.Server && ChkAutoMount.IsChecked == true;
         }
 
         private async Task<bool> RunTestAsync()
@@ -82,6 +86,18 @@ namespace SIFFA.DesktopApp.Views
             Apply();
             BtnTest.IsEnabled = BtnSave.IsEnabled = false;
             ShowStatus("Probando conexión…", ok: true);
+            // Con "Automontar" marcado, primero se crea la base y su estructura si faltan.
+            if (Settings.DbAutoMount)
+            {
+                var mount = await DatabaseProvisioner.ProvisionAsync(Settings, new Progress<string>(text => ShowStatus(text, ok: true)));
+                if (!mount.Ok)
+                {
+                    ShowStatus(mount.Message, ok: false);
+                    BtnTest.IsEnabled = BtnSave.IsEnabled = true;
+                    _tested = false;
+                    return false;
+                }
+            }
             var (ok, message) = await ConnectionTester.TestDatabaseAsync(Settings);
             ShowStatus(message, ok);
             BtnTest.IsEnabled = BtnSave.IsEnabled = true;

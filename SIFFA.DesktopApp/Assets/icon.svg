@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2A1B6B"/>
+      <stop offset="1" stop-color="#0F0A2E"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.55" r="0.5">
+      <stop offset="0" stop-color="#FFC94A" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#FFC94A" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ticket" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFE38A"/>
+      <stop offset="0.55" stop-color="#F7B731"/>
+      <stop offset="1" stop-color="#E39A08"/>
+    </linearGradient>
+    <linearGradient id="check" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4EE6A6"/>
+      <stop offset="1" stop-color="#16A86B"/>
+    </linearGradient>
+    <mask id="notches">
+      <rect x="0" y="0" width="1024" height="1024" fill="#fff"/>
+      <circle cx="190" cy="0" r="52" fill="#000"/>
+      <circle cx="190" cy="360" r="52" fill="#000"/>
+      <circle cx="0" cy="180" r="48" fill="#000"/>
+      <circle cx="640" cy="180" r="48" fill="#000"/>
+    </mask>
+  </defs>
+
+  <!-- Fondo -->
+  <rect x="32" y="32" width="960" height="960" rx="210" fill="url(#bg)"/>
+  <rect x="32" y="32" width="960" height="960" rx="210" fill="url(#glow)"/>
+
+  <!-- Confeti -->
+  <g>
+    <rect x="170" y="200" width="44" height="22" rx="8" fill="#FF5C8A" transform="rotate(-30 192 211)"/>
+    <rect x="790" y="170" width="44" height="22" rx="8" fill="#3DDC97" transform="rotate(35 812 181)"/>
+    <rect x="850" y="600" width="40" height="20" rx="8" fill="#5CC8FF" transform="rotate(-20 870 610)"/>
+    <rect x="140" y="640" width="40" height="20" rx="8" fill="#FFC94A" transform="rotate(40 160 650)"/>
+    <circle cx="300" cy="150" r="16" fill="#5CC8FF"/>
+    <circle cx="660" cy="130" r="14" fill="#FF5C8A"/>
+    <circle cx="890" cy="400" r="15" fill="#FFC94A"/>
+    <circle cx="130" cy="440" r="14" fill="#3DDC97"/>
+    <circle cx="250" cy="860" r="13" fill="#FF5C8A"/>
+    <circle cx="560" cy="890" r="13" fill="#5CC8FF"/>
+  </g>
+
+  <!-- Destellos -->
+  <path d="M770 240 L786 290 L836 306 L786 322 L770 372 L754 322 L704 306 L754 290 Z" fill="#FFFFFF"/>
+  <path d="M255 270 L265 300 L295 310 L265 320 L255 350 L245 320 L215 310 L245 300 Z" fill="#FFE38A"/>
+
+  <!-- Boleto (inclinado) -->
+  <g transform="translate(192 380) rotate(-12 320 180)">
+    <!-- sombra -->
+    <g transform="translate(0 18)" mask="url(#notches)">
+      <rect x="0" y="0" width="640" height="360" rx="44" fill="#000" opacity="0.35"/>
+    </g>
+    <g mask="url(#notches)">
+      <rect x="0" y="0" width="640" height="360" rx="44" fill="url(#ticket)"/>
+      <!-- talón -->
+      <rect x="0" y="0" width="190" height="360" fill="#000" opacity="0.08"/>
+    </g>
+    <!-- perforación -->
+    <line x1="190" y1="72" x2="190" y2="290" stroke="#9A5F00" stroke-width="12" stroke-linecap="round" stroke-dasharray="2 34"/>
+    <!-- estrella en talón -->
+    <path d="M95 120 L113 162 L158 166 L124 196 L134 240 L95 217 L56 240 L66 196 L32 166 L77 162 Z" fill="#9A5F00" opacity="0.75"/>
+    <!-- líneas de texto del boleto -->
+    <rect x="250" y="95" width="230" height="30" rx="15" fill="#9A5F00" opacity="0.55"/>
+    <rect x="250" y="150" width="160" height="22" rx="11" fill="#9A5F00" opacity="0.35"/>
+  </g>
+
+  <!-- Insignia de acceso -->
+  <circle cx="700" cy="660" r="150" fill="#0F0A2E"/>
+  <circle cx="700" cy="660" r="128" fill="url(#check)"/>
+  <path d="M638 662 L684 708 L768 616" fill="none" stroke="#FFFFFF" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

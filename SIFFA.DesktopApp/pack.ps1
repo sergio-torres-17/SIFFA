@@ -26,7 +26,8 @@ dotnet publish $project -c Release -r win-x64 --self-contained -p:Version=$Versi
 if ($LASTEXITCODE -ne 0) { throw 'dotnet publish falló' }
 
 # Si ya hay releases anteriores en $Output, vpk genera además los paquetes delta.
-vpk pack --packId SIFFA --packVersion $Version --packDir $publish --mainExe SIFFA.DesktopApp.exe --outputDir $Output --packTitle 'SIFFA'
+# El icono es el del instalador, del acceso directo y de Programas y características; splashImage sale al instalar.
+vpk pack --packId SIFFA --packVersion $Version --packDir $publish --mainExe SIFFA.DesktopApp.exe --outputDir $Output --packTitle 'SIFFA' --icon (Join-Path $PSScriptRoot 'Assets/SIFFA.ico') --splashImage (Join-Path $PSScriptRoot 'Assets/logo.png')
 if ($LASTEXITCODE -ne 0) { throw 'vpk pack falló' }
 
 Write-Host "Listo. Instalador y paquetes en: $Output"

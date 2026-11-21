@@ -492,3 +492,6 @@ SIFFA.PhpApp/storage/*
 !SIFFA.PhpApp/storage/.gitkeep
 SIFFA.PhpApp/dist/
 SIFFA.PhpApp/vendor/
+
+# Licencia (API-KEY de Appregistry del escritorio)
+SIFFA.DesktopApp/appsettings.local.json

@@ -24,6 +24,7 @@
 
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="8,0,0,18">
+                        <Image Source="/Assets/logo.png" Width="38" Height="38" Margin="0,0,10,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality" />
                         <TextBlock Text="SIFFA" FontSize="24" FontWeight="Bold" Foreground="White" />
                         <Ellipse Width="7" Height="7" Margin="3,13,0,0" Fill="{StaticResource BrushCyan}" />
                     </StackPanel>

@@ -53,6 +53,8 @@ namespace SIFFA.DesktopApp
             return new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+                // appsettings.local.json (fuera de git) trae la API-KEY de Appregistry; se empaqueta junto a la app.
+                .AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: false)
                 .AddJsonFile(userSettings, optional: true, reloadOnChange: false)
                 .Build();
         }
@@ -96,6 +98,7 @@ namespace SIFFA.DesktopApp
             AddByMode<IDashboardService, DashboardService, SIFFA.DesktopApp.Services.Web.WebDashboardService>(services);
             AddByMode<SIFFA.Core.Services.AttendanceService.IAttendanceService, SIFFA.Core.Services.AttendanceService.AttendanceService, SIFFA.DesktopApp.Services.Web.WebAttendanceService>(services);
             services.AddSingleton<AppUpdater>();
+            services.AddSingleton<LicenseManager>();
 
             //Configure windows
             services.AddTransient<SplashView>();
@@ -131,6 +134,26 @@ namespace SIFFA.DesktopApp
             splash.SetStatus("Verificando configuración del equipo…");
             await Task.Delay(800);
             var settings = store.Load();
+
+            // Licencia contra Appregistry (si está configurada). Sin internet se usa el periodo de gracia.
+            var licenses = Services.GetRequiredService<LicenseManager>();
+            if (licenses.IsEnabled)
+            {
+                splash.SetStatus("Validando licencia…");
+                var license = await licenses.ValidateAsync();
+                if (!license.CanUse)
+                {
+                    splash.Hide();
+                    var ask = new LicenseView(licenses, licenses.SavedKey is null ? null : license.Message);
+                    if (ask.ShowDialog() != true)
+                        return;
+                    splash.Show();
+                }
+                else if (license.State == SIFFA.Core.Services.AppregistryService.LicenseState.Grace)
+                {
+                    MessageBox.Show(license.Message, "SIFFA - Licencia", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
 
             UserSession? session = null;
             if (settings.IsConfigured)

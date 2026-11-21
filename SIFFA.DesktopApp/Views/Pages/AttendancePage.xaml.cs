@@ -68,17 +68,47 @@ namespace SIFFA.DesktopApp.Views.Pages
             }
         }
 
+        private void OnSearchChanged(object sender, TextChangedEventArgs e) => ShowRows();
+
+        // Estado elegido + texto del buscador. Cada palabra escrita debe aparecer en el nombre, número, tipo o área
+        // (sin importar mayúsculas ni acentos), así "ana ventas" encuentra a Ana de Ventas.
         private List<AttendanceRow> VisibleRows()
         {
             if (_report is null) return new();
             var filter = Filter;
-            return filter is null ? _report.Employees : _report.Employees.Where(r => r.Status == filter).ToList();
+            IEnumerable<AttendanceRow> rows = filter is null ? _report.Employees : _report.Employees.Where(r => r.Status == filter);
+
+            var words = Normalize(TxtSearch?.Text).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length > 0)
+                rows = rows.Where(r =>
+                {
+                    var haystack = Normalize($"{r.FullName} {r.EmployeeNumber} {r.EmployeeType} {r.Area}");
+                    return words.All(haystack.Contains);
+                });
+            return rows.ToList();
+        }
+
+        private static string Normalize(string? text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+            var decomposed = text.Trim().ToLowerInvariant().Normalize(System.Text.NormalizationForm.FormD);
+            var sb = new System.Text.StringBuilder(decomposed.Length);
+            foreach (var c in decomposed)
+                if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
+                    sb.Append(c);
+            return sb.ToString();
         }
 
         private void ShowRows()
         {
             if (Grid is null) return;
-            Grid.ItemsSource = VisibleRows();
+            var rows = VisibleRows();
+            Grid.ItemsSource = rows;
+
+            var searching = !string.IsNullOrWhiteSpace(TxtSearch.Text);
+            TxtShown.Text = _report is null ? "" : searching
+                ? (rows.Count == 0 ? "Ningún empleado coincide con la búsqueda." : $"Mostrando {rows.Count} empleados que coinciden con la búsqueda.")
+                : $"Mostrando {rows.Count} empleados.";
         }
 
         // ---------- exportar ----------
@@ -88,7 +118,7 @@ namespace SIFFA.DesktopApp.Views.Pages
             var rows = VisibleRows();
             if (rows.Count == 0)
             {
-                MessageBox.Show(Window.GetWindow(this), "No hay empleados en este filtro para exportar.", "Reporte de asistencia",
+                MessageBox.Show(Window.GetWindow(this), "No hay empleados en este filtro o búsqueda para exportar.", "Reporte de asistencia",
                     MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }

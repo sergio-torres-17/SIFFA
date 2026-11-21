@@ -19,7 +19,7 @@ namespace SIFFA.DesktopApp.Services
 
                 return hasSchema
                     ? (true, "Conexión correcta: la base de datos SIFFA está lista.")
-                    : (true, "Conexión correcta, pero la base no tiene las tablas de SIFFA. Publica el proyecto de base de datos antes de iniciar sesión.");
+                    : (true, "Conexión correcta, pero la base no tiene las tablas de SIFFA. Usa el botón \"Montar base de datos\" (equipo servidor) antes de iniciar sesión.");
             }
             catch (Exception ex)
             {

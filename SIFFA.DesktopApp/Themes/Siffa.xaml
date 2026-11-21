@@ -79,6 +79,8 @@
         <Setter Property="FontFamily" Value="Segoe UI" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="Icon" Value="pack://application:,,,/Assets/SIFFA.ico" />
+        <Setter Property="Icon" Value="pack://application:,,,/Assets/SIFFA.ico" />
         <Setter Property="WindowStyle" Value="None" />
         <Setter Property="WindowChrome.WindowChrome">
             <Setter.Value>

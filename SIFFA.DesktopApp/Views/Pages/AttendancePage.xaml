@@ -24,7 +24,10 @@
         <TextBlock x:Name="TxtError" Grid.Row="1" Foreground="{StaticResource BrushError}" TextWrapping="Wrap" Margin="0,0,0,10" Visibility="Collapsed" />
 
         <!-- Filtros con su conteo -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,12">
+        <StackPanel Grid.Row="2" Margin="0,0,0,12">
+            <TextBox x:Name="TxtSearch" TextChanged="OnSearchChanged" Margin="0,0,0,10" ToolTip="Escribe parte del nombre, número, tipo o área. Varias palabras deben coincidir todas." />
+            <TextBlock x:Name="TxtShown" Style="{StaticResource Muted}" FontSize="12" Margin="2,0,0,8" />
+            <StackPanel Orientation="Horizontal">
             <RadioButton x:Name="RbAll" GroupName="Filter" Style="{StaticResource CardRadio}" Margin="0,0,8,0" IsChecked="True" Checked="OnFilter">
                 <TextBlock x:Name="LblAll" Text="Todos" FontWeight="SemiBold" />
             </RadioButton>
@@ -37,6 +40,7 @@
             <RadioButton x:Name="RbExited" GroupName="Filter" Style="{StaticResource CardRadio}" Margin="0" Checked="OnFilter">
                 <TextBlock x:Name="LblExited" Text="Ya salieron" FontWeight="SemiBold" />
             </RadioButton>
+        </StackPanel>
         </StackPanel>
 
         <Border Grid.Row="3" Style="{StaticResource Panel}">

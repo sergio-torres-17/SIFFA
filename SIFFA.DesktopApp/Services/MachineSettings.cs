@@ -39,6 +39,9 @@ namespace SIFFA.DesktopApp.Services
         public string? DbUser { get; set; }
         public bool DbTrustCertificate { get; set; } = true;
 
+        /// <summary>Al probar o guardar la conexión, crea la base de datos y su estructura si no existen (solo equipo servidor).</summary>
+        public bool DbAutoMount { get; set; } = true;
+
         /// <summary>Contraseña de SQL cifrada con DPAPI (solo la puede descifrar este usuario de Windows en este equipo).</summary>
         public string? DbPasswordProtected { get; set; }
 
